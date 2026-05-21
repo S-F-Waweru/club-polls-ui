@@ -1,0 +1,73 @@
+<app-auth-shell
+  title="School Portal"
+  subtitle="Sign in to your account"
+  iconClass="pi pi-book">
+
+  <!-- Error banner drops automatically into the shell's slot -->
+  @if (auth.error()) {
+    <div class="flex items-center gap-2 text-danger text-sm rounded-md px-4 py-3 mb-5 border"
+         style="background-color: color-mix(in srgb, var(--danger-color) 10%, transparent); border-color: color-mix(in srgb, var(--danger-color) 20%, transparent);">
+      <i class="pi pi-exclamation-circle shrink-0"></i>
+      <span>{{ auth.error() }}</span>
+    </div>
+  }
+
+  <!-- Form drops right into the slot underneath the header -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-5">
+
+    <!-- Email Input Field -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-secondary-400 uppercase tracking-widest">
+        Email
+      </label>
+      <input
+        pInputText
+        type="email"
+        formControlName="email"
+        placeholder="admin@school.com"
+        class="w-full"
+      />
+      @if (isInvalid('email')) {
+        <span class="text-xs text-danger flex items-center gap-1 mt-1">
+          <i class="pi pi-times-circle text-xs"></i> Valid email is required
+        </span>
+      }
+    </div>
+
+    <!-- Password Input Field -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-secondary-400 uppercase tracking-widest">
+        Password
+      </label>
+      <p-password
+        formControlName="password"
+        placeholder="Enter your password"
+        [feedback]="false"
+        [toggleMask]="true"
+        class="w-full"
+        [fluid]="true"
+        inputStyleClass="w-full"
+      />
+      @if (isInvalid('password')) {
+        <span class="text-xs text-danger flex items-center gap-1 mt-1">
+          <i class="pi pi-times-circle text-xs"></i> Password is required
+        </span>
+      }
+    </div>
+
+    <!-- Submit Action Button -->
+    <p-button
+      type="submit"
+      label="Sign In"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      class="w-full"
+      [fluid]="true"
+      severity="primary"
+      [loading]="auth.isLoading()"
+      [disabled]="form.invalid || auth.isLoading()"
+    />
+
+  </form>
+
+</app-auth-shell>
