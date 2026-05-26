@@ -1,4 +1,5 @@
 <app-dashboard-shell>
+  <!-- HEADER SLOT -->
   <div header class="w-full flex justify-between items-center flex-wrap gap-4">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
@@ -7,57 +8,181 @@
         <i class="pi pi-book text-lg" style="color: var(--primary-500)"></i>
       </div>
       <div>
-        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Courses</h1>
-<!--        <p class="text-xs text-txt-muted mt-0.5">{{ store.totalRecords() }} courses available</p>-->
-        <p class="text-xs text-txt-muted mt-0.5">1 courses available</p>
-
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Course Catalog</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ store.totalRecords() }} total courses in system</p>
       </div>
     </div>
     <p-button label="New Course" icon="pi pi-plus" size="small" severity="primary" routerLink="/courses/new" />
   </div>
 
+  <!-- MAIN CONTENT SLOT -->
   <ng-container main-content>
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for (stat of stats(); track stat.label) {
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-txt-muted">{{ stat.label }}</span>
+          <h3 class="text-2xl font-bold tracking-tight text-txt-main mt-1">{{ stat.value }}</h3>
+          <span class="text-[11px]" [style.color]="stat.color">{{ stat.sub }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Search + filter bar -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="relative flex-1 min-w-50">
+        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-txt-ghost text-sm"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search by course name or code..."
+          [(ngModel)]="search"
+          class="w-full pl-9 text-sm"
+          style="background: var(--bg-panel); border-color: var(--border-default); color: var(--text-primary);" />
+      </div>
+      <div class="flex items-center gap-2">
+        @for (level of levels; track level) {
+          <button
+            (click)="activeLevel.set(level)"
+            class="px-3 py-1.5 rounded-md text-xs font-medium border transition-all"
+            [style.background]="activeLevel() === level ? 'color-mix(in srgb, var(--primary-500) 12%, transparent)' : 'transparent'"
+            [style.borderColor]="activeLevel() === level ? 'color-mix(in srgb, var(--primary-500) 30%, transparent)' : 'var(--border-default)'"
+            [style.color]="activeLevel() === level ? 'var(--primary-500)' : 'var(--text-muted)'">
+            {{ level }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Courses Table with Pagination (uses filteredCourses client‑side) -->
     <div class="border border-border-muted bg-panel-bg rounded-xl overflow-hidden backdrop-blur-xl">
-      <p-table [value]="store.entities()" responsiveLayout="scroll" [paginator]="true" [rows]="10" styleClass="p-datatable-sm">
+      <div class="p-5 border-b border-border-muted flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">
+          All Courses
+          <span class="ml-2 text-xs font-normal text-txt-muted">({{ filteredCourses().length }})</span>
+        </h3>
+        <span class="text-[10px] text-txt-ghost">Page {{ store.page() }} of {{ Math.ceil(store.totalRecords() / store.limit()) }}</span>
+      </div>
+
+      <p-table
+        [value]="filteredCourses()"
+        responsiveLayout="scroll"
+        [paginator]="true"
+        [rows]="store.limit()"
+        [totalRecords]="store.totalRecords()"
+        [rowsPerPageOptions]="[5, 10, 15, 25]"
+        (onPage)="onPageChange($event)"
+        styleClass="p-datatable-sm">
+
         <ng-template pTemplate="header">
           <tr>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Code</th>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Name</th>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Level</th>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Duration</th>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Capacity</th>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Fee</th>
-            <th class="bg-transparent! text-txt-muted! text-[10px] uppercase tracking-wider">Status</th>
-            <th></th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Code</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Name</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Level</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Duration</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Capacity</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Fee (KES)</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Status</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5"></th>
           </tr>
         </ng-template>
+
         <ng-template pTemplate="body" let-c>
           <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
             <td class="py-3 px-5 font-mono text-xs" style="color: var(--primary-400)">{{ c.code }}</td>
             <td class="py-3 px-5 text-xs font-semibold text-txt-main">{{ c.name }}</td>
             <td class="py-3 px-5 text-xs text-txt-muted">{{ c.level }}</td>
-            <td class="py-3 px-5 text-xs text-txt-muted">{{ c.durationWeeks }}w</td>
+            <td class="py-3 px-5 text-xs text-txt-muted">{{ c.durationWeeks }} weeks</td>
             <td class="py-3 px-5 text-xs text-txt-muted">{{ c.maxCapacity }}</td>
             <td class="py-3 px-5 text-xs text-txt-muted">
-              {{ c.feeStructure ? ('KES ' + c.feeStructure.totalAmount) : '—' }}
+              {{ c.feeStructure ? (c.feeStructure.totalAmount | number) : '—' }}
             </td>
             <td class="py-3 px-5">
-              <p-tag [value]="c.isActive ? 'Active' : 'Inactive'" [severity]="c.isActive ? 'success' : 'secondary'" styleClass="text-[9px]" />
+              <p-tag [value]="c.isActive ? 'Active' : 'Inactive'"
+                     [severity]="c.isActive ? 'success' : 'secondary'"
+                     styleClass="text-[9px] uppercase font-bold px-2 py-0.5 rounded" />
             </td>
             <td class="py-3 px-5">
               <div class="flex items-center gap-1">
-                <button [routerLink]="['/courses', c.id, 'edit']" class="w-7 h-7 rounded flex items-center justify-center" style="color: var(--text-muted); border: 1px solid var(--border-default)">
+                <button [routerLink]="['/courses', c.id, ]"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: var(--text-muted); border: 1px solid var(--border-default)"
+                        title="View">
+                  <i class="pi pi-eye text-xs"></i>
+                </button>
+                <button [routerLink]="['/courses', c.id, 'edit']"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: var(--text-muted); border: 1px solid var(--border-default)"
+                        title="Edit">
                   <i class="pi pi-pencil text-xs"></i>
                 </button>
-                <button (click)="confirmDelete(c)" class="w-7 h-7 rounded flex items-center justify-center" style="color: #ef4444; border: 1px solid #ef444440">
+                <button (click)="confirmDelete(c)"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: #ef4444; border: 1px solid #ef444440"
+                        title="Delete">
                   <i class="pi pi-trash text-xs"></i>
                 </button>
               </div>
             </td>
           </tr>
         </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="py-12 text-center text-xs text-txt-muted">
+              <i class="pi pi-search text-2xl block mb-2 opacity-30"></i>
+              No courses match your search.
+            </td>
+          </tr>
+        </ng-template>
       </p-table>
     </div>
   </ng-container>
+
+  <!-- SIDE PANEL SLOT -->
+  <ng-container side-panel>
+    <!-- Quick Actions -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Quick Actions</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <button routerLink="/courses/new"
+                class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left"
+                style="border-color: var(--border-muted); background: color-mix(in srgb, var(--bg-subtle) 50%, transparent)">
+          <i class="pi pi-plus text-sm" style="color: var(--primary-400)"></i>
+          <span class="text-xs font-medium text-txt-main">New Course</span>
+        </button>
+        <button class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left"
+                style="border-color: var(--border-muted); background: color-mix(in srgb, var(--bg-subtle) 50%, transparent)">
+          <i class="pi pi-file-export text-sm text-amber-400"></i>
+          <span class="text-xs font-medium text-txt-main">Export CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Courses -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Recent Courses</h3>
+      <div class="flex flex-col gap-3">
+        @for (c of recentCourses(); track c.id) {
+          <div class="flex items-center gap-3">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                 [style.background]="avatarBg(c.name)"
+                 style="color:#fff">
+              {{ initials(c.name) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-txt-main truncate">{{ c.name }}</p>
+              <p class="text-[10px] text-txt-muted">{{ c.code }}</p>
+            </div>
+            <span class="text-[10px] text-txt-ghost shrink-0">{{ c.createdAt | date:'shortDate' }}</span>
+          </div>
+        }
+        @empty {
+          <p class="text-xs text-txt-muted">No courses yet</p>
+        }
+      </div>
+    </div>
+  </ng-container>
+
   <p-confirmDialog />
 </app-dashboard-shell>
