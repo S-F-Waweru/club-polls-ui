@@ -37,10 +37,12 @@
           <label class="text-xs text-txt-muted">Full Name *</label>
           <input pInputText [(ngModel)]="form.fullName" placeholder="John Kamau" class="w-full text-sm" />
         </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-txt-muted">Student ID *</label>
-          <input pInputText [(ngModel)]="form.studentId" placeholder="STU001" class="w-full text-sm" />
-        </div>
+        @if (isEdit) {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Student ID</label>
+            <input pInputText [(ngModel)]="form.studentId" class="w-full text-sm opacity-60" [readOnly]="true" />
+          </div>
+        }
         <div class="flex flex-col gap-1">
           <label class="text-xs text-txt-muted">Date of Birth</label>
           <input pInputText type="date" [(ngModel)]="form.dateOfBirth" class="w-full text-sm" />

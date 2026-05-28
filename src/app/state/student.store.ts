@@ -3,7 +3,17 @@ import { signalStore, withState, withMethods, patchState, withHooks } from '@ngr
 import { withEntities, setAllEntities, addEntity, updateEntity, removeEntity } from '@ngrx/signals/entities';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { pipe, switchMap, tap, debounceTime, distinctUntilChanged } from 'rxjs';
+import {
+  pipe,
+  switchMap,
+  tap,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  catchError,
+  EMPTY,
+} from 'rxjs';
+import { environment } from '../../environments/environment';
 
 // ============================================================================
 // 1. Models & DTO Interfaces (Derived from your OpenAPI Spec)
@@ -21,10 +31,32 @@ export interface Student {
   guardianName?: string;
   guardianPhone?: string;
   createdAt: string;
+  enrollments: Enrollment[],
+}
+export interface Course {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  level: string;
+  durationWeeks: number;
+  maxCapacity: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
+export interface Enrollment {
+  id: string;
+  course: Course;
+  status: 'ACTIVE' | 'COMPLETED' | 'DROPPED';
+  enrolled_at: string;
+}
+
+
+
 export interface CreateStudentDto {
-  studentId: string;
+  studentId?: string;
   fullName: string;
   phone: string;
   guardianName?: string;
@@ -39,8 +71,10 @@ export interface UpdateStudentDto {
 }
 
 export interface PaginatedResponse<T> {
-  items: T[];
+  data: T[];
   total: number;
+  page: number;
+  lastPage: number;
 }
 
 // ============================================================================
@@ -96,13 +130,13 @@ export const StudentsStore = signalStore(
             .set('limit', limit.toString())
             .set('q', search);
 
-          return http.get<PaginatedResponse<Student>>('/api/students/paginated', { params });
+          return http.get<PaginatedResponse<Student>>(`${environment.apiUrl}students/paginated`, { params });
         }),
         tap({
           next: (response) => {
             patchState(store,
               // View-Port Replacement: Safely swaps out old page entries with the clean current page
-              setAllEntities(response.items),
+              setAllEntities(response.data),
               {
                 totalRecords: response.total,
                 isLoading: false
@@ -137,65 +171,122 @@ export const StudentsStore = signalStore(
       createStudent: rxMethod<CreateStudentDto>(
         pipe(
           tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((dto) => http.post<Student>('/api/students', dto)),
+          switchMap((dto) =>
+            http.post<Student>(`${environment.apiUrl}students`, dto).pipe(
+              tap((newStudent) => {
+                patchState(store,
+                  addEntity(newStudent),
+                  { totalRecords: store.totalRecords() + 1, isLoading: false }
+                );
+              }),
+              catchError((err) => {
+                patchState(store, {
+                  error: Array.isArray(err.error?.message)
+                    ? err.error.message.join(', ')
+                    : err.error?.message || 'Create failed.',
+                  isLoading: false,
+                });
+                return EMPTY;
+              })
+            )
+          ),
+        ),
+      ),
+      // GET BY UUID
+      loadStudentById: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((id) => http.get<Student>(`${environment.apiUrl}students/${id}`)),
           tap({
-            next: (newStudent) => {
-              patchState(store,
-                addEntity(newStudent), // Add directly into your local entities cache
-                {
-                  totalRecords: store.totalRecords() + 1,
-                  isLoading: false
-                }
-              );
+            next: (student) => {
+              patchState(store, updateEntity({ id: student.id, changes: student }), {
+                isLoading: false,
+              });
             },
-            error: (err) => patchState(store, { error: err.error?.message || 'Create failed.', isLoading: false })
-          })
-        )
+            error: (err) =>
+              patchState(store, {
+                error: err.error?.message || 'Failed to load student.',
+                isLoading: false,
+              }),
+          }),
+        ),
+      ),
+
+      // GET BY STUDENT ID (e.g. STU001)
+      loadStudentByStudentId: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((studentId) =>
+            http.get<Student>(`${environment.apiUrl}students/by-student-id/${studentId}`),
+          ),
+          tap({
+            next: (student) => {
+              patchState(store, updateEntity({ id: student.id, changes: student }), {
+                isLoading: false,
+              });
+            },
+            error: (err) =>
+              patchState(store, {
+                error: err.error?.message || 'Failed to load student.',
+                isLoading: false,
+              }),
+          }),
+        ),
       ),
 
       // UPDATE
       updateStudent: rxMethod<{ id: string; dto: UpdateStudentDto }>(
         pipe(
           tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap(({ id, dto }) => http.patch<Student>(`/api/students/${id}`, dto)),
+          switchMap(({ id, dto }) =>
+            http.patch<Student>(`${environment.apiUrl}students/${id}`, dto),
+          ),
           tap({
             next: (updatedStudent) => {
-              patchState(store,
+              patchState(
+                store,
                 // Instantly patches the item in the local map array
                 updateEntity({ id: updatedStudent.id, changes: updatedStudent }),
-                { isLoading: false }
+                { isLoading: false },
               );
             },
-            error: (err) => patchState(store, { error: err.error?.message || 'Update failed.', isLoading: false })
-          })
-        )
+            error: (err) =>
+              patchState(store, {
+                error: err.error?.message || 'Update failed.',
+                isLoading: false,
+              }),
+          }),
+        ),
       ),
 
       // DELETE
       deleteStudent: rxMethod<string>(
         pipe(
           tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((id) => http.delete<{ success: boolean }>(`/api/students/${id}`).pipe(
-            // Pass the targeted ID forward to the next hook block
-            tap(() => id)
-          )),
+          switchMap((id) =>
+            http.delete(`${environment.apiUrl}students/${id}`).pipe(
+              map(() => id), // pass id forward
+            ),
+          ),
           tap({
             next: (id) => {
-              patchState(store,
-                // removeEntity(id),
-                {
-                  totalRecords: store.totalRecords() - 1,
-                  isLoading: false
-                }
+              patchState(
+                store,
+                removeEntity(id), // actually remove from store
+                { totalRecords: store.totalRecords() - 1, isLoading: false },
               );
             },
-            error: (err) => patchState(store, { error: err.error?.message || 'Deletion failed.', isLoading: false })
-          })
-        )
+            error: (err) =>
+              patchState(store, {
+                error: err.error?.message || 'Deletion failed.',
+                isLoading: false,
+              }),
+          }),
+        ),
       ),
 
       // Expose the watcher so the initialization hook can read it
-      _runWatcher: loadPaginatedStudents
+      _runWatcher: loadPaginatedStudents,
     };
   }),
 
@@ -214,3 +305,18 @@ export const StudentsStore = signalStore(
     }
   })
 );
+
+
+// In student.store.ts - add to CreateStudentDto
+export interface CreateStudentDto {
+  studentId?: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  dateOfBirth?: string;
+  address?: string;
+  admissionDate: string;
+  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
+  guardianName?: string;
+  guardianPhone?: string;
+}

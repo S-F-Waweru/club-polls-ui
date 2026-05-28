@@ -14,6 +14,7 @@ import { providePrimeNG } from 'primeng/config';
 import { AppPreset } from './core/theme';
 import { AuthService } from './services/auth.services';
 import { AuthStore } from './state/auth.store';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 // ❌ WRONG: AuthStore is being used as a Type hint in the parameter list
 export function initializeAuthFactory(
@@ -28,6 +29,8 @@ export function initializeAuthFactory(
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    ConfirmationService,
+    MessageService,
     provideHttpClient(withInterceptors([authInterceptor])),
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),

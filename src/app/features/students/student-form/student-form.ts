@@ -33,7 +33,6 @@ export class StudentFormComponent implements OnInit {
   statusOptions = ['ACTIVE', 'GRADUATED', 'WITHDRAWN'];
 
   form: CreateStudentDto = {
-    studentId: '',
     fullName: '',
     email: '',
     phone: '',
@@ -67,15 +66,14 @@ export class StudentFormComponent implements OnInit {
       }
     }
   }
-
   submit() {
-    const payload: CreateStudentDto = {
-      ...this.form,
-      // Remove empty optional fields instead of sending ""
-      dateOfBirth: this.form.dateOfBirth || undefined,
-      address: this.form.address || undefined,
-      guardianName: this.form.guardianName || undefined,
-      guardianPhone: this.form.guardianPhone || undefined,
+    const { studentId, ...rest } = this.form;
+    const payload = {
+      ...rest,
+      dateOfBirth: rest.dateOfBirth || undefined,
+      address: rest.address || undefined,
+      guardianName: rest.guardianName || undefined,
+      guardianPhone: rest.guardianPhone || undefined,
     };
 
     if (this.isEdit) {
@@ -85,4 +83,21 @@ export class StudentFormComponent implements OnInit {
     }
     this.router.navigate(['/students']);
   }
+  // submit() {
+  //   const payload: CreateStudentDto = {
+  //     ...this.form,
+  //     // Remove empty optional fields instead of sending ""
+  //     dateOfBirth: this.form.dateOfBirth || undefined,
+  //     address: this.form.address || undefined,
+  //     guardianName: this.form.guardianName || undefined,
+  //     guardianPhone: this.form.guardianPhone || undefined,
+  //   };
+  //
+  //   if (this.isEdit) {
+  //     this.store.updateStudent({ id: this.studentUUID, dto: payload });
+  //   } else {
+  //     this.store.createStudent(payload);
+  //   }
+  //   this.router.navigate(['/students']);
+  // }
 }

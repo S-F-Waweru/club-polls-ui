@@ -446,9 +446,10 @@ export class DashboardShellComponent {
       group: 'Manage',
       items: [
         { label: 'Students', icon: 'pi-users', route: '/students', badge: 4 },
-        { label: 'Courses', icon: 'pi-book', route: '/cources', badge: 12 },
-        { label: 'Products', icon: 'pi-box', route: '/products' },
-        { label: 'Inventory', icon: 'pi-warehouse', route: '/inventory' },
+        { label: 'Courses', icon: 'pi-book', route: '/courses', badge: 12 },
+        { label: 'Enrollments', icon: 'pi-file', route: '/enrollments' },
+        { label: 'Invoices', icon: 'pi-receipt', route: '/invoices' },
+        { label: 'Payments', icon: 'pi-money-bill', route: '/payments' },
       ],
     },
     {
