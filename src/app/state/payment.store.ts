@@ -15,6 +15,18 @@ export interface PaymentInvoice {
   balance: number;
   status: 'PAID' | 'PARTIAL' | 'UNPAID';
   issued_at: string;
+  enrollment: {
+    student: {
+      id: string;
+      studentId: string;
+      fullName: string;
+    };
+    course: {
+      id: string;
+      name: string;
+      code: string;
+    };
+  };
 }
 
 export interface RecordedBy {

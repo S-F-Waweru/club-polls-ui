@@ -37,10 +37,12 @@
           <label class="text-xs text-txt-muted">Invoice *</label>
           <p-select
             [(ngModel)]="form.invoiceId"
-            [options]="invoiceOptions()"
-            optionLabel="id"
-            optionValue="id"
-            placeholder="Select invoice"
+            [options]="invoiceSelectOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select student / invoice"
+            [filter]="true"
+            filterBy="label"
             class="w-full text-sm" />
           <!-- show invoice label as student + course once selected -->
           @if (selectedInvoice; as inv) {

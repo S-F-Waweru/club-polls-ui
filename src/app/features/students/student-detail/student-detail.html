@@ -137,12 +137,13 @@
         <p-tabs value="0">
           <p-tablist>
             <p-tab value="0">Enrollments</p-tab>
-            <p-tab value="1">Payments</p-tab>
-            <p-tab value="2">Invoices</p-tab>
+            <p-tab value="1">Invoices</p-tab>
+            <p-tab value="2">Payments</p-tab>
             <p-tab value="3">Balance</p-tab>
           </p-tablist>
 
           <p-tabpanels>
+            <!-- ENROLLMENTS -->
             <p-tabpanel value="0">
               <div class="p-3">
                 @if (student()?.enrollments?.length) {
@@ -162,9 +163,7 @@
                           <td class="py-2 px-3 text-txt-main font-medium">{{ e.course.name }}</td>
                           <td class="py-2 px-3 font-mono text-xs" style="color: var(--primary-400)">{{ e.course.code }}</td>
                           <td class="py-2 px-3 text-txt-muted">{{ e.course.level }}</td>
-                          <td class="py-2 px-3">
-                            <p-tag [value]="e.status" [severity]="statusSeverity(e.status)" />
-                          </td>
+                          <td class="py-2 px-3"><p-tag [value]="e.status" [severity]="statusSeverity(e.status)" /></td>
                           <td class="py-2 px-3 text-txt-muted">{{ e.enrolled_at | date:'mediumDate' }}</td>
                         </tr>
                       }
@@ -175,19 +174,94 @@
                 }
               </div>
             </p-tabpanel>
+
+            <!-- INVOICES -->
             <p-tabpanel value="1">
               <div class="p-3">
-                <p class="text-sm text-txt-muted">Payment transactions for this student.</p>
+                @if (allInvoices().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Course</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Total</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Balance</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Issued</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (inv of allInvoices(); track inv.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-main font-medium">{{ inv.courseName }}</td>
+                          <td class="py-2 px-3 text-txt-main">KES {{ inv.totalAmount | number }}</td>
+                          <td class="py-2 px-3 text-txt-main">KES {{ inv.balance | number }}</td>
+                          <td class="py-2 px-3"><p-tag [value]="inv.status" [severity]="statusSeverity(inv.status)" /></td>
+                          <td class="py-2 px-3 text-txt-muted">{{ inv.issued_at | date:'mediumDate' }}</td>
+                          <td class="py-2 px-3">
+                            <a [routerLink]="['/invoices', inv.id]" class="text-xs" style="color: var(--primary-400)">View →</a>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No invoices found.</p>
+                }
               </div>
             </p-tabpanel>
+
+            <!-- PAYMENTS -->
             <p-tabpanel value="2">
               <div class="p-3">
-                <p class="text-sm text-txt-muted">Invoice history and current balance.</p>
+                @if (allPayments().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Course</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Amount</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Method</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Ref</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Paid At</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (p of allPayments(); track p.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-main">{{ p.courseName }}</td>
+                          <td class="py-2 px-3 text-txt-main font-medium">KES {{ p.amount | number }}</td>
+                          <td class="py-2 px-3 text-txt-muted">{{ p.method }}</td>
+                          <td class="py-2 px-3 font-mono text-xs text-txt-muted">{{ p.transactionRef || '—' }}</td>
+                          <td class="py-2 px-3"><p-tag [value]="p.status" [severity]="statusSeverity(p.status)" /></td>
+                          <td class="py-2 px-3 text-txt-muted">{{ p.paid_at | date:'mediumDate' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No payments found.</p>
+                }
               </div>
             </p-tabpanel>
+
+            <!-- BALANCE -->
             <p-tabpanel value="3">
-              <div class="p-3">
-                <p class="text-sm text-txt-muted">Outstanding balance summary.</p>
+              <div class="p-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Total Billed</p>
+                  <p class="text-2xl font-bold text-txt-main">KES {{ balanceSummary().totalBilled | number }}</p>
+                </div>
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Total Paid</p>
+                  <p class="text-2xl font-bold text-green-400">KES {{ balanceSummary().totalPaid | number }}</p>
+                </div>
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Outstanding Balance</p>
+                  <p class="text-2xl font-bold" [class.text-red-400]="balanceSummary().totalBalance > 0" [class.text-green-400]="balanceSummary().totalBalance === 0">
+                    KES {{ balanceSummary().totalBalance | number }}
+                  </p>
+                </div>
               </div>
             </p-tabpanel>
           </p-tabpanels>

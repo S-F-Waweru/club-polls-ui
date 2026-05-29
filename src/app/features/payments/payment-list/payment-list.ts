@@ -25,7 +25,6 @@ import { Payment, PaymentsStore } from '../../../state/payment.store';
     DecimalPipe,
     RouterLink,
     ConfirmDialog,
-    SlicePipe,
   ],
   templateUrl: './payment-list.html',
   styleUrl: './payment-list.css',
@@ -46,6 +45,7 @@ export class PaymentListComponent {
 
   filtered = computed(() => {
     let list = this.payments();
+
     if (this.activeFilter() !== 'All') list = list.filter((p) => p.status === this.activeFilter());
     if (this.activeMethod() !== 'All') list = list.filter((p) => p.method === this.activeMethod());
     const q = this.search.toLowerCase();
@@ -53,7 +53,8 @@ export class PaymentListComponent {
       list = list.filter(
         (p) =>
           p.transactionRef.toLowerCase().includes(q) ||
-          p.recordedBy?.name.toLowerCase().includes(q),
+          p.recordedBy?.name.toLowerCase().includes(q) ||
+          p.invoice.enrollment.student.fullName.toLowerCase().includes(q),
       );
     return list;
   });

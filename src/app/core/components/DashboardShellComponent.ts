@@ -438,18 +438,21 @@ export class DashboardShellComponent {
     {
       group: 'Overview',
       items: [
-        { label: 'Dashboard', icon: 'pi-chart-pie', route: '/dashboard' },
-        { label: 'Enrollments', icon: 'pi-note', route: '/analytics' },
+        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/dashboard' },
+        { label: 'Payments', icon: 'pi pi-money-bill', route: '/analytics' },
+        { label: 'Finance', icon: 'pi pi-dollar', route: '/analytics' },
+        { label: 'Students', icon: 'pi pi-users', route: '/analytics' },
+        { label: 'Course', icon: 'pi pi-book', route: '/analytics' },
       ],
     },
     {
       group: 'Manage',
       items: [
-        { label: 'Students', icon: 'pi-users', route: '/students', badge: 4 },
-        { label: 'Courses', icon: 'pi-book', route: '/courses', badge: 12 },
-        { label: 'Enrollments', icon: 'pi-file', route: '/enrollments' },
-        { label: 'Invoices', icon: 'pi-receipt', route: '/invoices' },
-        { label: 'Payments', icon: 'pi-money-bill', route: '/payments' },
+        { label: 'Students', icon: 'pi pi-users', route: '/students', },
+        { label: 'Courses', icon: 'pi pi-book', route: '/courses', }, //badge: 12
+        { label: 'Enrollments', icon: 'pi pi-file', route: '/enrollments' },
+        { label: 'Invoices', icon: 'pi pi-receipt', route: '/invoices' },
+        { label: 'Payments', icon: 'pi pi-money-bill', route: '/payments' },
       ],
     },
     {

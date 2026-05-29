@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -51,6 +51,13 @@ export class PaymentFormComponent implements OnInit {
   get selectedInvoice() {
     return this.invoicesStore.entities().find((i) => i.id === this.form.invoiceId) ?? null;
   }
+
+  invoiceSelectOptions = computed(() =>
+    this.invoicesStore.entities().map((inv) => ({
+      label: `${inv.enrollment.student.fullName} — ${inv.enrollment.course.name} (KES ${inv.balance} left)`,
+      value: inv.id,
+    }))
+  );
 
   submit() {
     const payload: CreatePaymentDto = {

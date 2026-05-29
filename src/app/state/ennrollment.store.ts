@@ -92,6 +92,8 @@ export const EnrollmentsStore = signalStore(
 
   withMethods((store, http = inject(HttpClient)) => {
 
+
+
     const loadPaginated = rxMethod<{ page: number; limit: number }>(
       pipe(
         debounceTime(300),
@@ -126,6 +128,34 @@ export const EnrollmentsStore = signalStore(
       // Pagination controls
       setPage: (page: number) => patchState(store, { page }),
       setLimit: (limit: number) => patchState(store, { limit, page: 1 }),
+
+      loadByCourseId: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((courseId) => {
+            const params = new HttpParams().set('page', '1').set('limit', '100');
+            return http
+              .get<PaginatedResponse<Enrollment>>(
+                `${environment.apiUrl}enrollments/by-course/${courseId}`,
+                { params },
+              )
+              .pipe(
+                tap({
+                  next: (res) =>
+                    patchState(store, setAllEntities(res.data), {
+                      totalRecords: res.total,
+                      isLoading: false,
+                    }),
+                  error: (err) =>
+                    patchState(store, {
+                      error: err.error?.message || 'Failed to load course enrollments.',
+                      isLoading: false,
+                    }),
+                }),
+              );
+          }),
+        ),
+      ),
 
       // CREATE — auto-generates invoice on backend
       createEnrollment: rxMethod<CreateEnrollmentDto>(

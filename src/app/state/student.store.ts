@@ -53,6 +53,32 @@ export interface Enrollment {
   enrolled_at: string;
 }
 
+export interface InvoicePayment {
+  id: string;
+  amount: number;
+  method: 'MPESA' | 'BANK' | 'CASH';
+  transactionRef: string;
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  paid_at: string;
+  synced_at: string | null;
+}
+
+export interface StudentInvoice {
+  id: string;
+  totalAmount: number;
+  balance: number;
+  status: 'PAID' | 'PARTIAL' | 'UNPAID';
+  issued_at: string;
+  payments: InvoicePayment[];
+}
+
+export interface Enrollment {
+  id: string;
+  course: Course;
+  invoice: StudentInvoice;
+  status: 'ACTIVE' | 'COMPLETED' | 'DROPPED';
+  enrolled_at: string;
+}
 
 
 export interface CreateStudentDto {
