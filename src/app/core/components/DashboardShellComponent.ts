@@ -247,7 +247,7 @@ export interface NavGroup {
               class="logo-text font-semibold text-sm tracking-tight"
               [style.color]="'var(--text-primary)'"
             >
-              AdminHQ
+              Helapay
             </span>
           </div>
 
@@ -425,7 +425,7 @@ export interface NavGroup {
               [style.color]="'var(--text-ghost)'"
               [style.borderTop]="'1px solid var(--border-default)'"
             >
-              <span>AdminHQ &copy; {{ currentYear }}</span>
+              <span>Helapay &copy; {{ currentYear }}</span>
               <ng-content select="[footer]"></ng-content>
               <span>v1.0.0</span>
             </footer>
