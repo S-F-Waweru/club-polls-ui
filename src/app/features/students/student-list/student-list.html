@@ -11,11 +11,10 @@
       <div>
         <h1 class="text-lg font-semibold tracking-tight text-txt-main">Student Registry</h1>
         <p class="text-xs text-txt-muted mt-0.5">{{ students().length }} enrolled students across all programmes</p>
-      </div>
+      </div>s
     </div>
 
     <div class="flex items-center gap-3">
-      <p-button label="Export" icon="pi pi-download" size="small" [outlined]="true" severity="secondary" />
       <p-button label="Admit Student" icon="pi pi-plus" size="small" severity="primary" routerLink="/students/new" />
     </div>
   </div>
@@ -137,7 +136,7 @@
               <div class="flex items-center gap-1">
                 <button
                   [routerLink]="['/students', s.studentId]"
-                  class="w-7 h-7 rounded flex items-center justify-center transition-colors cursor-pointer"
+                  class="w-7 h-7 rounded flex items-center justaify-center transition-colors cursor-pointer"
                   style="color: var(--text-muted); border: 1px solid var(--border-default)"
                   title="View profile">
                   <i class="pi pi-eye text-xs"></i>
@@ -195,10 +194,10 @@
           <i class="pi pi-receipt text-sm text-green-400"></i>
           <span class="text-xs font-medium text-txt-main">Generate Bill</span>
         </button>
-        <button class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left"
+        <button (click)="studentStore.exportStudents()" class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left"
                 style="border-color: var(--border-muted); background: color-mix(in srgb, var(--bg-subtle) 50%, transparent)">
           <i class="pi pi-file-export text-sm text-amber-400"></i>
-          <span class="text-xs font-medium text-txt-main">Export CSV</span>
+          <span class="text-xs font-medium text-txt-main">Export Exxcel</span>
         </button>
         <button class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left"
                 style="border-color: var(--border-muted); background: color-mix(in srgb, var(--bg-subtle) 50%, transparent)">

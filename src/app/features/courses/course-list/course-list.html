@@ -151,7 +151,7 @@
           <i class="pi pi-plus text-sm" style="color: var(--primary-400)"></i>
           <span class="text-xs font-medium text-txt-main">New Course</span>
         </button>
-        <button class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left"
+        <button (click)="store.exportCourses()" class="flex flex-col items-start gap-2 p-3 rounded-lg border transition-all text-left cursor-pointers "
                 style="border-color: var(--border-muted); background: color-mix(in srgb, var(--bg-subtle) 50%, transparent)">
           <i class="pi pi-file-export text-sm text-amber-400"></i>
           <span class="text-xs font-medium text-txt-main">Export CSV</span>

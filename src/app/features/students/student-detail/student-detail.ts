@@ -16,7 +16,7 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 })
 export class StudentDetailComponent {
   private route = inject(ActivatedRoute);
-  private store = inject(StudentsStore);
+  protected store = inject(StudentsStore);
   private studentId = this.route.snapshot.paramMap.get('id');
 
   student = computed(() => this.store.entities().find((s) => s.studentId === this.studentId) ?? null);
@@ -68,5 +68,10 @@ export class StudentDetailComponent {
 
   getInitials(name: string): string {
     return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  // Create a getter to safely handle the ID
+  get currentStudentId(): string | undefined {
+    return (this.student() as any)?.studentId; // Replace 'studentId' with the correct key
   }
 }

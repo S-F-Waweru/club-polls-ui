@@ -15,6 +15,15 @@
     </div>
 
     <div class="flex items-center gap-3">
+      @if(student()){
+        <p-button
+          (click)="store.exportStudentPayment({ student_id: currentStudentId! })"
+          label="Export"
+          icon="pi pi-download"
+          size="small"
+          [outlined]="true"
+          severity="secondary" />
+      }
       <p-button label="Edit" icon="pi pi-pencil" size="small" severity="primary" [routerLink]="['/students', student()?.studentId, 'edit']" />
       <p-button label="Back" icon="pi pi-arrow-left" size="small" [outlined]="true" severity="secondary" routerLink="/students" />
     </div>

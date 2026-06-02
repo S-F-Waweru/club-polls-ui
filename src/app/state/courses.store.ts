@@ -196,6 +196,52 @@ export const CoursesStore = signalStore(
           }),
         ),
       ),
+      exportCourses: rxMethod<void>(
+        pipe(
+          tap(() =>
+            patchState(store, {
+              isLoading: true,
+              error: null,
+            }),
+          ),
+
+          switchMap(() =>
+            http.get(
+              `${environment.apiUrl}courses/export/all`,
+              {
+                responseType: 'blob',
+              },
+            ),
+          ),
+
+          tap({
+            next: (blob) => {
+              const url = window.URL.createObjectURL(blob);
+
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'Courses.xlsx';
+              a.click();
+
+              window.URL.revokeObjectURL(url);
+            },
+            // next: (blob) => {
+            //   saveAs(blob, `students-${new Date().toISOString().split('T')[0]}.xlsx`);
+            //
+            //   patchState(store, {
+            //     isLoading: false,
+            //   });
+            // },
+
+            error: (err) => {
+              patchState(store, {
+                error: err.error?.message || 'Failed to export students.',
+                isLoading: false,
+              });
+            },
+          }),
+        ),
+      ),
 
       _runWatcher: loadPaginatedCourses,
     };

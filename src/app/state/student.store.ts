@@ -200,10 +200,10 @@ export const StudentsStore = signalStore(
           switchMap((dto) =>
             http.post<Student>(`${environment.apiUrl}students`, dto).pipe(
               tap((newStudent) => {
-                patchState(store,
-                  addEntity(newStudent),
-                  { totalRecords: store.totalRecords() + 1, isLoading: false }
-                );
+                patchState(store, addEntity(newStudent), {
+                  totalRecords: store.totalRecords() + 1,
+                  isLoading: false,
+                });
               }),
               catchError((err) => {
                 patchState(store, {
@@ -213,8 +213,8 @@ export const StudentsStore = signalStore(
                   isLoading: false,
                 });
                 return EMPTY;
-              })
-            )
+              }),
+            ),
           ),
         ),
       ),
@@ -307,6 +307,94 @@ export const StudentsStore = signalStore(
                 error: err.error?.message || 'Deletion failed.',
                 isLoading: false,
               }),
+          }),
+        ),
+      ),
+
+      exportStudentPayment: rxMethod<{ student_id: string }>(
+        pipe(
+          tap(() =>
+            patchState(store, {
+              isLoading: true,
+              error: null,
+            }),
+          ),
+
+          switchMap(({ student_id }) =>
+            http.get(`${environment.apiUrl}students/export/payments/${student_id}`, {
+              responseType: 'blob',
+            }),
+          ),
+
+          tap({
+            next: (blob) => {
+              const url = window.URL.createObjectURL(blob);
+
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'students.xlsx';
+              a.click();
+
+              window.URL.revokeObjectURL(url);
+            },
+            // next: (blob) => {
+            //   saveAs(blob, `students-${new Date().toISOString().split('T')[0]}.xlsx`);
+            //
+            //   patchState(store, {
+            //     isLoading: false,
+            //   });
+            // },
+
+            error: (err) => {
+              patchState(store, {
+                error: err.error?.message || 'Failed to export students.',
+                isLoading: false,
+              });
+            },
+          }),
+        ),
+      ),
+
+      exportStudents: rxMethod<void>(
+        pipe(
+          tap(() =>
+            patchState(store, {
+              isLoading: true,
+              error: null,
+            }),
+          ),
+
+          switchMap(() =>
+            http.get(`${environment.apiUrl}students/export/all`, {
+              responseType: 'blob',
+            }),
+          ),
+
+          tap({
+            next: (blob) => {
+              const url = window.URL.createObjectURL(blob);
+
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'students.xlsx';
+              a.click();
+
+              window.URL.revokeObjectURL(url);
+            },
+            // next: (blob) => {
+            //   saveAs(blob, `students-${new Date().toISOString().split('T')[0]}.xlsx`);
+            //
+            //   patchState(store, {
+            //     isLoading: false,
+            //   });
+            // },
+
+            error: (err) => {
+              patchState(store, {
+                error: err.error?.message || 'Failed to export students.',
+                isLoading: false,
+              });
+            },
           }),
         ),
       ),
