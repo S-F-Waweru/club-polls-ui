@@ -1,0 +1,318 @@
+<app-dashboard-shell>
+
+  <!-- HEADER -->
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--p-purple-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--p-purple-500) 20%, transparent);">
+        <i class="pi pi-graduation-cap text-lg" style="color: var(--p-purple-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight">Courses & Students</h1>
+        <p class="text-xs text-txt-muted mt-0.5">Enrollment capacity, student status and revenue per course</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+
+      <!-- Mode toggle -->
+      <div class="flex items-center gap-1 border border-border-muted rounded-lg p-0.5">
+        <button (click)="filterMode.set('year')"
+                class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                [style.background]="filterMode() === 'year' ? 'color-mix(in srgb, var(--primary-500) 15%, transparent)' : 'transparent'"
+                [style.color]="filterMode() === 'year' ? 'var(--primary-500)' : 'var(--text-muted)'">
+          By Year
+        </button>
+        <button (click)="filterMode.set('range')"
+                class="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                [style.background]="filterMode() === 'range' ? 'color-mix(in srgb, var(--primary-500) 15%, transparent)' : 'transparent'"
+                [style.color]="filterMode() === 'range' ? 'var(--primary-500)' : 'var(--text-muted)'">
+          Date Range
+        </button>
+      </div>
+
+      @if (filterMode() === 'year') {
+        <p-select [options]="yearOptions" optionLabel="label" optionValue="value"
+                  [ngModel]="selectedYear()" (ngModelChange)="selectedYear.set($event)"
+                  placeholder="Select year" class="text-sm" />
+      }
+      @if (filterMode() === 'range') {
+        <input pInputText type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)"
+               class="text-xs" style="background: var(--bg-panel); border-color: var(--border-default); color: var(--text-primary);" />
+        <span class="text-xs text-txt-muted">to</span>
+        <input pInputText type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)"
+               class="text-xs" style="background: var(--bg-panel); border-color: var(--border-default); color: var(--text-primary);" />
+      }
+
+      <p-button icon="pi pi-filter" label="Apply" size="small" severity="primary" (onClick)="applyFilter()" />
+      <p-button icon="pi pi-times" size="small" [outlined]="true" severity="secondary" (onClick)="resetFilter()" pTooltip="Reset filter" />
+      <p-button label="New Enrollment" icon="pi pi-plus" size="small" severity="primary" routerLink="/enrollments/new" />
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <ng-container main-content>
+
+    <!-- Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      @for (stat of metrics(); track stat.label) {
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 flex items-center justify-between backdrop-blur-xl">
+          <div class="flex flex-col gap-1">
+            <span class="text-[10px] font-medium text-txt-muted uppercase tracking-wider">{{ stat.label }}</span>
+            <h3 class="text-xl font-bold tracking-tight mt-1">
+              @if (isLoading()) { <span class="text-txt-muted">—</span> } @else { {{ stat.value }} }
+            </h3>
+            <span class="text-[10px] text-txt-muted mt-0.5">{{ stat.sub }}</span>
+          </div>
+          <div class="w-10 h-10 rounded-lg border flex items-center justify-center text-base flex-shrink-0"
+               [style.--icon-color]="stat.color"
+               style="border-color: color-mix(in srgb, var(--icon-color) 20%, transparent);
+                      background-color: color-mix(in srgb, var(--icon-color) 10%, transparent);
+                      color: var(--icon-color);">
+            <i [class]="stat.icon"></i>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Enrollments per Month + New Students per Month -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-txt-main tracking-tight">Enrollments per Month</h3>
+          <span class="text-[10px] text-txt-muted">All courses combined</span>
+        </div>
+        <div style="height: 220px">
+          <p-chart type="line" [data]="enrollmentsPerMonthData()" [options]="enrollmentsLineOptions" height="220px" />
+        </div>
+      </div>
+
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-txt-main tracking-tight">New Students per Month</h3>
+          <span class="text-[10px] text-txt-muted">Newly admitted students</span>
+        </div>
+        <div style="height: 220px">
+          <p-chart type="bar" [data]="newStudentsData()" [options]="newStudentsBarOptions" height="220px" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Student Status Donut + Course Capacity Bar -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-txt-main tracking-tight">Student Status</h3>
+          <span class="text-[10px] text-txt-muted">By enrollment status</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 items-center">
+          <div style="height: 180px">
+            <p-chart type="doughnut" [data]="studentStatusData()" [options]="studentStatusDonutOptions" height="180px" />
+          </div>
+          <div class="flex flex-col gap-2">
+            @for (s of studentStatusBreakdown(); track s.status) {
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-txt-main font-medium">{{ s.status }}</span>
+                <span class="text-txt-muted">{{ s.count }} students</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-txt-main tracking-tight">Enrollment vs Capacity</h3>
+          <span class="text-[10px] text-txt-muted">Per course</span>
+        </div>
+        <div style="height: 180px">
+          <p-chart type="bar" [data]="courseCapacityData()" [options]="courseCapacityOptions" height="180px" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Course Enrollment Table -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl overflow-hidden backdrop-blur-xl">
+      <div class="p-4 border-b border-border-muted flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">Course Enrollment Details</h3>
+        <a routerLink="/courses" class="text-xs" style="color: var(--primary-400)">View all courses →</a>
+      </div>
+      @if (isLoading()) {
+        <div class="p-8 text-center text-xs text-txt-muted">Loading...</div>
+      } @else if (enrollmentPerCourse().length) {
+        <table class="w-full text-sm">
+          <thead>
+          <tr class="border-b border-border-muted text-left">
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Course</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Code</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Enrolled</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Capacity</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4 w-32">Fill Rate</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (c of enrollmentPerCourse(); track c.courseId) {
+              <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                <td class="py-2 px-4 text-txt-main font-medium">{{ c.name }}</td>
+                <td class="py-2 px-4 text-txt-muted text-xs">{{ c.code }}</td>
+                <td class="py-2 px-4 text-txt-main">{{ c.enrolled }}</td>
+                <td class="py-2 px-4 text-txt-muted">{{ c.maxCapacity }}</td>
+                <td class="py-2 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-border-muted rounded-full h-1.5">
+                      <div class="h-1.5 rounded-full transition-all"
+                           [style.width.%]="capacityPercent(c.enrolled, c.maxCapacity)"
+                           [style.background-color]="capacityColor(capacityPercent(c.enrolled, c.maxCapacity))">
+                      </div>
+                    </div>
+                    <span class="text-[10px] text-txt-muted w-7 text-right">
+                      {{ capacityPercent(c.enrolled, c.maxCapacity) }}%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="p-8 text-center text-xs text-txt-muted italic">No enrollment data.</div>
+      }
+    </div>
+
+    <!-- Course Revenue Table -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl overflow-hidden backdrop-blur-xl">
+      <div class="p-4 border-b border-border-muted flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">Revenue per Course</h3>
+        <span class="text-[10px] text-txt-muted">Billed vs outstanding</span>
+      </div>
+      @if (revenuePerCourse().length) {
+        <table class="w-full text-sm">
+          <thead>
+          <tr class="border-b border-border-muted text-left">
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Course</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Code</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Total Billed</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Outstanding</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (c of revenuePerCourse(); track c.courseId) {
+              <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                <td class="py-2 px-4 text-txt-main font-medium">{{ c.name }}</td>
+                <td class="py-2 px-4 text-txt-muted text-xs">{{ c.code }}</td>
+                <td class="py-2 px-4 text-txt-main">KES {{ +c.totalBilled | number }}</td>
+                <td class="py-2 px-4 text-amber-400 font-semibold">KES {{ +c.outstanding | number }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="p-8 text-center text-xs text-txt-muted italic">No revenue data.</div>
+      }
+    </div>
+
+    <!-- Top Debtors -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl overflow-hidden backdrop-blur-xl">
+      <div class="p-4 border-b border-border-muted flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">Students with Outstanding Fees</h3>
+        <a routerLink="/students" class="text-xs" style="color: var(--primary-400)">View all students →</a>
+      </div>
+      @if (debtors().length) {
+        <table class="w-full text-sm">
+          <thead>
+          <tr class="border-b border-border-muted text-left">
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Student</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4">Amount Owed</th>
+            <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-4"></th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (d of debtors(); track d.studentId) {
+              <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                <td class="py-2 px-4 text-txt-main font-medium">{{ d.fullName }}</td>
+                <td class="py-2 px-4 text-red-400 font-semibold">KES {{ +d.totalOwed | number }}</td>
+                <td class="py-2 px-4">
+                  <a [routerLink]="['/students', d.studentId]" class="text-xs" style="color: var(--primary-400)">View →</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="p-8 text-center text-xs text-txt-muted italic">No outstanding student fees.</div>
+      }
+    </div>
+
+  </ng-container>
+
+  <!-- SIDE PANEL -->
+  <ng-container side-panel>
+
+    <!-- Student Status -->
+    @if (studentStatusBreakdown().length) {
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col gap-3">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">Student Status</h3>
+        @for (s of studentStatusBreakdown(); track s.status) {
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-txt-main font-medium">{{ s.status }}</span>
+            <span class="text-txt-muted">{{ s.count }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Course Capacity Quick View -->
+    @if (enrollmentPerCourse().length) {
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col gap-3">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">Capacity at a Glance</h3>
+        @for (c of enrollmentPerCourse(); track c.courseId) {
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-txt-main font-medium">{{ c.code }}</span>
+              <span class="text-txt-muted text-[10px]">{{ c.enrolled }}/{{ c.maxCapacity }}</span>
+            </div>
+            <div class="w-full bg-border-muted rounded-full h-1">
+              <div class="h-1 rounded-full transition-all"
+                   [style.width.%]="capacityPercent(c.enrolled, c.maxCapacity)"
+                   [style.background-color]="capacityColor(capacityPercent(c.enrolled, c.maxCapacity))">
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Quick Actions -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col gap-3">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Quick Actions</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <button routerLink="/students/new"
+                class="flex flex-col items-start gap-2 p-3 rounded-lg border border-border-muted/60 bg-white/5 hover:bg-white/10 transition-all text-left">
+          <i class="pi pi-user-plus text-sm text-primary-400"></i>
+          <span class="text-xs font-medium text-txt-main">Admit Student</span>
+        </button>
+        <button routerLink="/enrollments/new"
+                class="flex flex-col items-start gap-2 p-3 rounded-lg border border-border-muted/60 bg-white/5 hover:bg-white/10 transition-all text-left">
+          <i class="pi pi-book text-sm text-amber-400"></i>
+          <span class="text-xs font-medium text-txt-main">Enroll Student</span>
+        </button>
+        <button routerLink="/courses/new"
+                class="flex flex-col items-start gap-2 p-3 rounded-lg border border-border-muted/60 bg-white/5 hover:bg-white/10 transition-all text-left">
+          <i class="pi pi-plus-circle text-sm text-purple-400"></i>
+          <span class="text-xs font-medium text-txt-main">Add Course</span>
+        </button>
+        <button routerLink="/students"
+                class="flex flex-col items-start gap-2 p-3 rounded-lg border border-border-muted/60 bg-white/5 hover:bg-white/10 transition-all text-left">
+          <i class="pi pi-users text-sm text-blue-400"></i>
+          <span class="text-xs font-medium text-txt-main">All Students</span>
+        </button>
+      </div>
+    </div>
+
+  </ng-container>
+
+</app-dashboard-shell>

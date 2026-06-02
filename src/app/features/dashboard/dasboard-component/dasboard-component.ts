@@ -17,7 +17,6 @@ import { FormsModule } from '@angular/forms';
     DashboardShellComponent,
     Button,
     TableModule,
-    Tag,
     CommonModule,
     RouterLink,
     ChartModule,
@@ -69,6 +68,8 @@ export class DashboardComponent implements OnInit {
     this.store.loadDashboard();
     this.store.loadFinancial();
     this.store.loadInvoices();
+
+
   }
 
   metrics = computed(() => {

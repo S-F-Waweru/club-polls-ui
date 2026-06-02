@@ -16,6 +16,8 @@ import {InvoiceDetailComponent} from './features/invoices/invoice-detail/invoice
 import {PaymentListComponent} from './features/payments/payment-list/payment-list';
 import {PaymentDetailComponent} from './features/payments/payment-detail/payment-detail';
 import {PaymentFormComponent} from './features/payments/payment-form/payment-form';
+import { FinancialOverview } from './features/overview/financial-overview/financial-overview';
+import { CoursesOverview } from './features/overview/courses-overview/courses-overview';
 
 export const routes: Routes = [
   {
@@ -29,6 +31,18 @@ export const routes: Routes = [
     component: DashboardComponent,
     // You'd use an authGuard here to block guests from the dashboard
   },
+  {
+    path: 'finances-overview',
+    component: FinancialOverview,
+    // You'd use an authGuard here to block guests from the dashboard
+  },
+
+  {
+    path: 'courses-overview',
+    component: CoursesOverview,
+    // You'd use an authGuard here to block guests from the dashboard
+  },
+
   { path: 'students', component: StudentListComponent },
   { path: 'students/new', component: StudentFormComponent },
   { path: 'students/:id', component: StudentDetailComponent },

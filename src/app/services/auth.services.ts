@@ -65,4 +65,15 @@ export class AuthService {
   navigateToLogin(): void {
     this.router.navigate(['/login']);
   }
+  changePassword(dto: { currentPassword: string; newPassword: string }): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/change-password`, dto);
+  }
+
+  forgotPassword(email: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(dto: { token: string; newPassword: string }): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/reset-password`, dto);
+  }
 }
