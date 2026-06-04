@@ -19,19 +19,20 @@ import { environment } from '../../environments/environment';
 // 1. Models & DTO Interfaces (Derived from your OpenAPI Spec)
 // ============================================================================
 export interface Student {
-  id: string;               // Database generated UUID
-  studentId: string;        // e.g., STU001
+  id: string; // Database generated UUID
+  studentId: string; // e.g., STU001
   fullName: string;
-  email: string;            // added
+  email: string; // added
   phone: string;
-  dateOfBirth?: string;     // added (optional)
-  address?: string;         // added (optional)
-  admissionDate: string;    // added
+  dateOfBirth?: string; // added (optional)
+  address?: string; // added (optional)
+  admissionDate: string; // added
   status: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN'; // added (use StudentStatus enum)
   guardianName?: string;
   guardianPhone?: string;
   createdAt: string;
-  enrollments: Enrollment[],
+  enrollments: Enrollment[];
+  wallet?: Wallet;
 }
 export interface Course {
   id: string;
@@ -103,6 +104,24 @@ export interface PaginatedResponse<T> {
   lastPage: number;
 }
 
+
+export interface WalletTransaction {
+  id: string;
+  type: 'CREDIT' | 'DEBIT';
+  reason: 'OVERPAYMENT' | 'APPLIED_TO_INVOICE' | 'REFUND';
+  amount: number;
+  referenceId: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface Wallet {
+  id: string;
+  balance: number;
+  transactions: WalletTransaction[];
+  createdAt: string;
+  updatedAt: string;
+}
 // ============================================================================
 // 2. Operational State Interface
 // ============================================================================

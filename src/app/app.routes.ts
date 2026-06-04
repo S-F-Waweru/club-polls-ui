@@ -18,6 +18,7 @@ import {PaymentDetailComponent} from './features/payments/payment-detail/payment
 import {PaymentFormComponent} from './features/payments/payment-form/payment-form';
 import { FinancialOverview } from './features/overview/financial-overview/financial-overview';
 import { CoursesOverview } from './features/overview/courses-overview/courses-overview';
+import { DarajaTransactionsComponent } from './features/Daraja/components/daraja-transactions/daraja-transactions';
 
 export const routes: Routes = [
   {
@@ -67,6 +68,11 @@ export const routes: Routes = [
   // { path: 'invoices/new', component: EnrollmentFormComponent },
   { path: 'invoices/:id', component: InvoiceDetailComponent },
   // { path: 'invoices/:id/edit', component: EnrollmentFormComponent },
+
+  {
+    path: 'transactions',
+   component:DarajaTransactionsComponent
+  },
 
   {
     path: '',

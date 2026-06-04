@@ -468,6 +468,13 @@ export class DashboardShellComponent {
         { label: 'Settings', icon: 'pi-cog', route: '/settings' },
       ],
     },
+
+    {
+      group: 'Mpesa',
+      items: [
+        { label: 'M-Pesa', icon: 'pi pi-mobile', route: '/transactions' },
+      ],
+    },
   ]);
 
   userMenuItems: MenuItem[] = [

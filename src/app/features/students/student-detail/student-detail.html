@@ -149,6 +149,7 @@
             <p-tab value="1">Invoices</p-tab>
             <p-tab value="2">Payments</p-tab>
             <p-tab value="3">Balance</p-tab>
+            <p-tab value="4">Wallet</p-tab>
           </p-tablist>
 
           <p-tabpanels>
@@ -271,6 +272,55 @@
                     KES {{ balanceSummary().totalBalance | number }}
                   </p>
                 </div>
+              </div>
+            </p-tabpanel>
+
+            <!-- WALLET -->
+            <p-tabpanel value="4">
+              <div class="p-3">
+                <!-- Wallet Balance Card -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                    <p class="text-xs text-txt-muted uppercase font-medium">Wallet Balance</p>
+                    <p class="text-2xl font-bold"
+                       [class.text-green-400]="walletBalance() > 0"
+                       [class.text-txt-muted]="walletBalance() === 0">
+                      KES {{ walletBalance() | number }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Wallet Transactions -->
+                @if (walletTransactions().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Type</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Reason</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Amount</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Note</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Date</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (tx of walletTransactions(); track tx.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3">
+                            <p-tag
+                              [value]="tx.type"
+                              [severity]="tx.type === 'CREDIT' ? 'success' : 'danger'" />
+                          </td>
+                          <td class="py-2 px-3 text-txt-muted text-xs">{{ tx.reason }}</td>
+                          <td class="py-2 px-3 text-txt-main font-medium">KES {{ tx.amount | number }}</td>
+                          <td class="py-2 px-3 text-txt-muted text-xs">{{ tx.note || '—' }}</td>
+                          <td class="py-2 px-3 text-txt-muted">{{ tx.createdAt | date:'mediumDate' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No wallet transactions found.</p>
+                }
               </div>
             </p-tabpanel>
           </p-tabpanels>
