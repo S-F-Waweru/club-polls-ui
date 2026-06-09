@@ -205,4 +205,55 @@ export const AppPreset = definePreset(Aura, {
       root: { borderRadius: '{borderRadius.md}' },
     },
   },
+
+  tabs: {
+    colorScheme: {
+      light: {
+        tab: {
+          background: 'transparent',
+          hoverBackground: 'color-mix(in srgb, {indigo.500} 8%, transparent)',
+          activeBackground: 'transparent',
+          borderColor: 'transparent',
+          hoverBorderColor: 'transparent',
+          activeBorderColor: '{indigo.600}',
+          color: '{slate.500}',
+          hoverColor: '{slate.800}',
+          activeColor: '{indigo.600}',
+        },
+        tablist: {
+          background: 'transparent',
+          borderColor: '{slate.200}',
+          activeBarBackground: '{indigo.600}',
+        },
+        tabpanel: {
+          background: 'transparent',
+          color: '{slate.800}',
+          padding: '0',
+        },
+      },
+      dark: {
+        tab: {
+          background: 'transparent',
+          hoverBackground: 'color-mix(in srgb, {indigo.400} 10%, transparent)',
+          activeBackground: 'transparent',
+          borderColor: 'transparent',
+          hoverBorderColor: 'transparent',
+          activeBorderColor: '{indigo.400}',
+          color: '{slate.400}',
+          hoverColor: '{slate.100}',
+          activeColor: '{indigo.400}',
+        },
+        tablist: {
+          background: 'transparent',
+          borderColor: '{slate.700}',
+          activeBarBackground: '{indigo.400}',
+        },
+        tabpanel: {
+          background: 'transparent',
+          color: '{slate.100}',
+          padding: '0',
+        },
+      },
+    },
+  },
 });

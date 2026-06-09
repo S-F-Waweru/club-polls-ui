@@ -29,6 +29,9 @@ export class StudentDetailComponent {
   private route = inject(ActivatedRoute);
   protected store = inject(StudentsStore);
   private studentId = this.route.snapshot.paramMap.get('id');
+  // add computed
+  statement = computed(() => this.store.statement());
+  statementLoading = computed(() => this.store.statementLoading());
 
   student = computed(
     () => this.store.entities().find((s) => s.studentId === this.studentId) ?? null,
@@ -71,6 +74,8 @@ export class StudentDetailComponent {
 
   constructor() {
     if (this.studentId) this.store.loadStudentByStudentId(this.studentId);
+    // add to constructor
+    if (this.studentId) this.store.loadStatement(this.studentId);
   }
 
   statusSeverity(status: string): 'success' | 'danger' | 'info' | 'warn' | 'secondary' {
@@ -97,6 +102,46 @@ export class StudentDetailComponent {
       .join('')
       .slice(0, 2)
       .toUpperCase();
+  }
+
+  statementRows(
+    st: any,
+  ): {
+    date: string;
+    description: string;
+    ref: string;
+    debit: number;
+    credit: number;
+    runningBalance: number;
+  }[] {
+    const rows: any[] = [];
+    let bal = 0;
+
+    for (const e of st.enrollments) {
+      bal += e.invoiceTotal;
+      rows.push({
+        date: new Date(e.enrolledAt).toLocaleDateString('en-KE'),
+        description: `Enrollment: ${e.course}`,
+        ref: '—',
+        debit: e.invoiceTotal,
+        credit: 0,
+        runningBalance: bal,
+      });
+
+      for (const p of e.payments) {
+        bal -= p.amount;
+        rows.push({
+          date: p.paidAt ? new Date(p.paidAt).toLocaleDateString('en-KE') : '—',
+          description: `Payment: ${e.course}`,
+          ref: `${p.transactionRef} · ${p.method}`,
+          debit: 0,
+          credit: p.amount,
+          runningBalance: bal,
+        });
+      }
+    }
+
+    return rows;
   }
 
   // Create a getter to safely handle the ID

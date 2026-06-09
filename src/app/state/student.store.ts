@@ -18,6 +18,31 @@ import { environment } from '../../environments/environment';
 // ============================================================================
 // 1. Models & DTO Interfaces (Derived from your OpenAPI Spec)
 // ============================================================================
+export interface StudentStatement {
+  studentId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  walletBalance: number;
+  overallPaid: number;
+  overallBalance: number;
+  enrollments: {
+    course: string;
+    enrolledAt: string;
+    invoiceTotal: number;
+    balance: number;
+    invoiceStatus: string;
+    totalPaid: number;
+    payments: {
+      amount: number;
+      method: string;
+      transactionRef: string;
+      status: string;
+      paidAt: string;
+    }[];
+  }[];
+}
+
 export interface Student {
   id: string; // Database generated UUID
   studentId: string; // e.g., STU001
@@ -132,6 +157,8 @@ export interface StudentsState {
   totalRecords: number;
   isLoading: boolean;
   error: string | null;
+  statement: StudentStatement | null;
+  statementLoading: boolean;
 }
 
 const initialStudentsState: StudentsState = {
@@ -141,6 +168,8 @@ const initialStudentsState: StudentsState = {
   totalRecords: 0,
   isLoading: false,
   error: null,
+  statement: null,
+  statementLoading: false,
 };
 
 // ============================================================================
@@ -414,6 +443,49 @@ export const StudentsStore = signalStore(
                 isLoading: false,
               });
             },
+          }),
+        ),
+      ),
+
+      loadStatement: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { statementLoading: true, error: null })),
+          switchMap((identifier) =>
+            http.get<StudentStatement>(`${environment.apiUrl}students/${identifier}/statement`).pipe(
+              catchError((err) => {
+                patchState(store, {
+                  error: err.error?.message || 'Failed to load statement.',
+                  statementLoading: false,
+                });
+                return EMPTY;
+              }),
+            ),
+          ),
+          tap((statement) => patchState(store, { statement, statementLoading: false })),
+        ),
+      ),
+
+      downloadStatementPdf: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((identifier) =>
+            http.get(`${environment.apiUrl}students/${identifier}/statement/pdf`, {
+              responseType: 'blob',
+            }).pipe(
+              catchError((err) => {
+                patchState(store, { error: 'Failed to download PDF.', isLoading: false });
+                return EMPTY;
+              }),
+            ),
+          ),
+          tap((blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `statement.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            patchState(store, { isLoading: false });
           }),
         ),
       ),
