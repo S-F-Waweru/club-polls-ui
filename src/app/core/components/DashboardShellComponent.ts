@@ -73,7 +73,7 @@ export interface NavGroup {
         padding: 8px 10px;
         border-radius: var(--radius-sm);
         cursor: pointer;
-        color: var(--text-muted);
+        color: rgba(255,255,255,0.75);
         font-size: 0.825rem;
         font-weight: 500;
         transition:
@@ -83,16 +83,12 @@ export interface NavGroup {
         position: relative;
       }
       .nav-item:hover {
-        background: var(--bg-subtle);
-        color: var(--text-primary);
+        background: rgba(255,255,255,0.12);
+        color: #fff;
       }
       .nav-item.active {
-        background: color-mix(in srgb, var(--primary-500) 10%, transparent);
-        color: var(--primary-600);
-      }
-      .dark .nav-item.active {
-        background: color-mix(in srgb, var(--primary-500) 15%, transparent);
-        color: var(--primary-400);
+        background: rgba(255,255,255,0.2);
+        color: #fff;
       }
       .nav-item .nav-icon {
         font-size: 1rem;
@@ -110,7 +106,7 @@ export interface NavGroup {
         height: 60%;
         width: 3px;
         border-radius: 0 2px 2px 0;
-        background: var(--primary-500);
+        background: #fff;
       }
 
       /* Tooltip for collapsed sidebar */
@@ -144,17 +140,17 @@ export interface NavGroup {
         background: transparent;
       }
       .sidebar-nav::-webkit-scrollbar-thumb {
-        background: var(--border-muted);
+        background: rgba(255,255,255,0.2);
         border-radius: 99px;
       }
 
       /* Main scroll area — no scrollbar */
       .main-scroll {
         overflow-y: auto;
-        scrollbar-width: none; /* Firefox */
+        scrollbar-width: none;
       }
       .main-scroll::-webkit-scrollbar {
-        display: none; /* Chrome / Safari */
+        display: none;
       }
 
       /* Grid overlay */
@@ -163,6 +159,19 @@ export interface NavGroup {
           linear-gradient(var(--grid-line) 1px, transparent 1px),
           linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
         background-size: 40px 40px;
+      }
+
+      /* Nav group label on primary bg */
+      .nav-group-label {
+        color: rgba(255,255,255,0.45) !important;
+      }
+
+      /* Logo border and footer border on primary bg */
+      .sidebar-logo-border {
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+      }
+      .sidebar-footer-border {
+        border-top: 1px solid rgba(255,255,255,0.15);
       }
 
       /* Mobile overlay */
@@ -225,28 +234,23 @@ export interface NavGroup {
           class="sidebar flex flex-col h-screen sticky top-0 flex-shrink-0"
           [class.collapsed]="collapsed()"
           [class.mobile-open]="mobileOpen()"
-          [style.background]="'var(--bg-panel)'"
-          [style.borderRight]="'1px solid var(--border-default)'"
+          [style.background]="'var(--primary-600)'"
           [style.boxShadow]="'var(--shadow-sm)'"
         >
           <!-- Logo -->
           <div
-            class="flex items-center gap-3 px-4 py-4 flex-shrink-0"
-            [style.borderBottom]="'1px solid var(--border-default)'"
+            class="flex items-center gap-3 px-4 py-4 flex-shrink-0 sidebar-logo-border"
             [style.minHeight]="'61px'"
           >
             <div
               class="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
-              [style.background]="'var(--primary-600)'"
+              [style.background]="'rgba(255,255,255,0.2)'"
               [style.color]="'#fff'"
               [style.fontSize]="'1rem'"
             >
               <i class="pi pi-bolt"></i>
             </div>
-            <span
-              class="logo-text font-semibold text-sm tracking-tight"
-              [style.color]="'var(--text-primary)'"
-            >
+            <span class="logo-text font-semibold text-sm tracking-tight" style="color:#fff">
               Helapay
             </span>
           </div>
@@ -255,10 +259,7 @@ export interface NavGroup {
           <nav class="sidebar-nav flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1">
             @for (group of navGroups(); track group.group) {
               <div class="mb-1">
-                <p
-                  class="nav-group-label px-2 mb-1 text-[10px] font-semibold uppercase tracking-widest"
-                  [style.color]="'var(--text-ghost)'"
-                >
+                <p class="nav-group-label px-2 mb-1 text-[10px] font-semibold uppercase tracking-widest">
                   {{ group.group }}
                 </p>
                 @for (item of group.items; track item.route) {
@@ -273,8 +274,8 @@ export interface NavGroup {
                     @if (item.badge) {
                       <span
                         class="nav-badge text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                        [style.background]="'color-mix(in srgb, var(--primary-500) 15%, transparent)'"
-                        [style.color]="'var(--primary-600)'"
+                        [style.background]="'rgba(255,255,255,0.2)'"
+                        [style.color]="'#fff'"
                       >
                         {{ item.badge }}
                       </span>
@@ -286,24 +287,19 @@ export interface NavGroup {
           </nav>
 
           <!-- Footer -->
-          <div
-            class="px-2 py-3 flex flex-col gap-1 flex-shrink-0"
-            [style.borderTop]="'1px solid var(--border-default)'"
-          >
+          <div class="px-2 py-3 flex flex-col gap-1 flex-shrink-0 sidebar-footer-border">
             <!-- User avatar row -->
             <div class="nav-item cursor-pointer" (click)="menu.toggle($event)">
               <div
                 class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-                [style.background]="'var(--primary-600)'"
+                [style.background]="'rgba(255,255,255,0.25)'"
                 [style.color]="'#fff'"
               >
                 JD
               </div>
               <div class="nav-label flex flex-col leading-tight">
-                <span class="text-xs font-medium" [style.color]="'var(--text-primary)'"
-                >John Doe</span
-                >
-                <span class="text-[10px]" [style.color]="'var(--text-ghost)'">Admin</span>
+                <span class="text-xs font-medium" style="color:#fff">John Doe</span>
+                <span class="text-[10px]" style="color:rgba(255,255,255,0.6)">Admin</span>
               </div>
             </div>
 
@@ -468,7 +464,6 @@ export class DashboardShellComponent {
         { label: 'Settings', icon: 'pi-cog', route: '/settings' },
       ],
     },
-
     {
       group: 'Mpesa',
       items: [

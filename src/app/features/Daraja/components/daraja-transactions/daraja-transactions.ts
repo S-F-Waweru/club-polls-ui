@@ -10,6 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DashboardShellComponent } from '../../../../core/components/DashboardShellComponent';
 import { DarajaStore } from '../../daraja.store';
+import { TableModule } from 'primeng/table';
 
 @Component({
   selector: 'app-daraja-transactions',
@@ -24,6 +25,7 @@ import { DarajaStore } from '../../daraja.store';
     SelectModule,
     InputTextModule,
     DatePickerModule,
+    TableModule,
   ],
   templateUrl: './daraja-transactions.html',
 })
@@ -59,11 +61,11 @@ export class DarajaTransactionsComponent implements OnInit, OnDestroy {
   summary = computed(() => {
     const txs = this.store.transactions();
     return {
-      completed: txs.filter(t => t.status === 'COMPLETED').length,
-      pending: txs.filter(t => t.status === 'PENDING').length,
-      failed: txs.filter(t => t.status === 'FAILED').length,
+      completed: txs.filter((t) => t.status === 'COMPLETED').length,
+      pending: txs.filter((t) => t.status === 'PENDING').length,
+      failed: txs.filter((t) => t.status === 'FAILED').length,
       totalAmount: txs
-        .filter(t => t.status === 'COMPLETED')
+        .filter((t) => t.status === 'COMPLETED')
         .reduce((sum, t) => sum + Number(t.amount), 0),
     };
   });

@@ -150,51 +150,99 @@
         </div>
       }
 
-      <!-- Table -->
-      @if (!store.isLoading() && store.transactions().length) {
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-            <tr class="border-b border-border-muted text-left">
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Receipt No</th>
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Type</th>
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Phone</th>
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Account Ref</th>
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Amount</th>
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Status</th>
-              <th class="text-[10px] uppercase text-txt-muted font-medium py-3 px-4">Date</th>
+      @if (!store.isLoading()) {
+        <p-table
+          [value]="store.transactions()"
+          responsiveLayout="scroll"
+          [paginator]="false"
+          styleClass="p-datatable-sm">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">#</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Receipt No</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Type</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Phone</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Account Ref</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Amount</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Status</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Date</th>
             </tr>
-            </thead>
-            <tbody>
-              @for (tx of store.transactions(); track tx.id) {
-                <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
-                  <td class="py-3 px-4 font-mono text-xs" style="color: var(--primary-400)">
-                    {{ tx.mpesaReceiptNumber || '—' }}
-                  </td>
-                  <td class="py-3 px-4">
-                    <p-tag
-                      [value]="tx.type === 'STK_PUSH' ? 'STK' : 'C2B'"
-                      [severity]="typeSeverity(tx.type)" />
-                  </td>
-                  <td class="py-3 px-4 text-txt-muted font-mono text-xs">{{ tx.phoneNumber }}</td>
-                  <td class="py-3 px-4 text-txt-main">{{ tx.accountReference || '—' }}</td>
-                  <td class="py-3 px-4 text-txt-main font-medium">KES {{ tx.amount | number }}</td>
-                  <td class="py-3 px-4">
-                    <p-tag [value]="tx.status" [severity]="statusSeverity(tx.status)" />
-                  </td>
-                  <td class="py-3 px-4 text-txt-muted text-xs">
-                    {{ tx.createdAt | date:'dd MMM y, HH:mm' }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-tx let-rowIndex="rowIndex">
+            <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+
+              <!-- Row number -->
+              <td class="py-3 px-5 text-xs text-txt-muted font-mono">
+                {{ (store.page() - 1) * store.limit() + rowIndex + 1 }}
+              </td>
+
+              <!-- Receipt No -->
+              <td class="py-3 px-5 font-mono text-xs" style="color: var(--primary-400)">
+                {{ tx.mpesaReceiptNumber || '—' }}
+              </td>
+
+              <!-- Type -->
+              <td class="py-3 px-5">
+                <p-tag
+                  [value]="tx.type === 'STK_PUSH' ? 'STK' : 'C2B'"
+                  [severity]="typeSeverity(tx.type)"
+                  styleClass="text-[9px] uppercase font-bold px-2 py-0.5 rounded" />
+              </td>
+
+              <!-- Phone -->
+              <td class="py-3 px-5 font-mono text-xs text-txt-muted">{{ tx.phoneNumber }}</td>
+
+              <!-- Account Ref -->
+              <td class="py-3 px-5 text-xs text-txt-main">{{ tx.accountReference || '—' }}</td>
+
+              <!-- Amount -->
+              <td class="py-3 px-5 text-xs text-txt-main font-medium">
+                KES {{ tx.amount | number }}
+              </td>
+
+              <!-- Status -->
+              <td class="py-3 px-5">
+                <p-tag
+                  [value]="tx.status"
+                  [severity]="statusSeverity(tx.status)"
+                  styleClass="text-[9px] uppercase font-bold px-2 py-0.5 rounded" />
+              </td>
+
+              <!-- Date -->
+              <td class="py-3 px-5 text-xs text-txt-muted">
+                {{ tx.createdAt | date:'dd MMM y, HH:mm' }}
+              </td>
+
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="py-12 text-center text-xs text-txt-muted">
+                <i class="pi pi-inbox text-2xl block mb-2 opacity-30"></i>
+                No transactions found.
+                @if (hasActiveFilters()) {
+                  <p-button
+                    label="Clear filters"
+                    size="small"
+                    [text]="true"
+                    severity="secondary"
+                    (onClick)="clearFilters()"
+                    class="mt-2 block" />
+                }
+              </td>
+            </tr>
+          </ng-template>
+
+        </p-table>
 
         <!-- Pagination -->
         <div class="flex items-center justify-between px-4 py-3 border-t border-border-muted">
           <p class="text-xs text-txt-muted">
-            Page {{ store.page() }} · {{ store.total() }} records
+            Showing {{ (store.page() - 1) * store.limit() + 1 }}–{{ (store.page() - 1) * store.limit() + store.transactions().length }}
+            of {{ store.total() }}
           </p>
           <div class="flex gap-2">
             <p-button
@@ -204,6 +252,9 @@
               severity="secondary"
               [disabled]="store.page() === 1"
               (onClick)="onPageChange(store.page() - 1)" />
+            <span class="text-xs text-txt-muted flex items-center px-2">
+              Page {{ store.page() }}
+            </span>
             <p-button
               icon="pi pi-chevron-right"
               size="small"
@@ -215,22 +266,6 @@
         </div>
       }
 
-      <!-- Empty State -->
-      @if (!store.isLoading() && !store.transactions().length) {
-        <div class="p-12 text-center">
-          <i class="pi pi-inbox text-4xl text-txt-muted mb-3 block"></i>
-          <p class="text-txt-muted text-sm">No transactions found.</p>
-          @if (hasActiveFilters()) {
-            <p-button
-              label="Clear filters"
-              size="small"
-              [text]="true"
-              severity="secondary"
-              (onClick)="clearFilters()"
-              class="mt-2" />
-          }
-        </div>
-      }
     </div>
 
   </ng-container>
@@ -264,7 +299,6 @@
           {{ store.pollingEnabled() ? 'Live polling active' : 'Polling paused' }}
         </div>
 
-        <!-- Stats -->
         <div class="mt-2 pt-3 border-t border-border-muted flex flex-col gap-2">
           <div class="flex justify-between text-xs">
             <span class="text-txt-muted">Current page</span>
