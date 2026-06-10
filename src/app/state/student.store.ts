@@ -20,6 +20,7 @@ import { environment } from '../../environments/environment';
 // ============================================================================
 export interface StudentStatement {
   studentId: string;
+  nationalId?: string | null;
   fullName: string;
   email: string;
   phone: string;
@@ -46,6 +47,7 @@ export interface StudentStatement {
 export interface Student {
   id: string; // Database generated UUID
   studentId: string; // e.g., STU001
+  nationalId?: string | null;
   fullName: string;
   email: string; // added
   phone: string;
@@ -109,15 +111,27 @@ export interface Enrollment {
 
 export interface CreateStudentDto {
   studentId?: string;
+  nationalId?: string;
   fullName: string;
+  email: string;
   phone: string;
+  dateOfBirth?: string;
+  address?: string;
+  admissionDate: string;
+  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
   guardianName?: string;
   guardianPhone?: string;
 }
 
 export interface UpdateStudentDto {
+  nationalId?: string;
   fullName?: string;
+  email?: string;
   phone?: string;
+  dateOfBirth?: string;
+  address?: string;
+  admissionDate?: string;
+  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
   guardianName?: string;
   guardianPhone?: string;
 }
@@ -511,17 +525,3 @@ export const StudentsStore = signalStore(
   })
 );
 
-
-// In student.store.ts - add to CreateStudentDto
-export interface CreateStudentDto {
-  studentId?: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  dateOfBirth?: string;
-  address?: string;
-  admissionDate: string;
-  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
-  guardianName?: string;
-  guardianPhone?: string;
-}

@@ -27,7 +27,7 @@ import { PaymentsStore } from '../../../state/payment.store';
 })
 export class PaymentDetailComponent {
   private route = inject(ActivatedRoute);
-  protected store = inject(PaymentsStore);
+  store = inject(PaymentsStore);
   private confirm = inject(ConfirmationService);
 
   private paymentId = this.route.snapshot.paramMap.get('id');
@@ -38,7 +38,7 @@ export class PaymentDetailComponent {
   }
 
   statusSeverity(status: string): 'success' | 'warn' | 'danger' | 'secondary' {
-    const map: Record<string, any> = { SUCCESS: 'success', PENDING: 'warn', FAILED: 'danger' };
+    const map: Record<string, any> = { VERIFIED: 'success', PENDING: 'warn', FAILED: 'danger' };
     return map[status] ?? 'secondary';
   }
 
@@ -89,7 +89,7 @@ export class PaymentDetailComponent {
 
   confirmVerify() {
     this.confirm.confirm({
-      message: 'Mark this payment as verified (SUCCESS)?',
+      message: 'Mark this payment as verified?',
       header: 'Verify Payment',
       icon: 'pi pi-check-circle',
       acceptLabel: 'Verify',

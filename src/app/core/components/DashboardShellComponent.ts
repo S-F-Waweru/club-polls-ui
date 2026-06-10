@@ -457,13 +457,13 @@ export class DashboardShellComponent {
         { label: 'Payments', icon: 'pi pi-money-bill', route: '/payments' },
       ],
     },
-    {
-      group: 'System',
-      items: [
-        { label: 'Logs', icon: 'pi-list', route: '/logs' },
-        { label: 'Settings', icon: 'pi-cog', route: '/settings' },
-      ],
-    },
+    // {
+    //   group: 'System',
+    //   items: [
+    //     { label: 'Logs', icon: 'pi-list', route: '/logs' },
+    //     { label: 'Settings', icon: 'pi-cog', route: '/settings' },
+    //   ],
+    // },
     {
       group: 'Mpesa',
       items: [

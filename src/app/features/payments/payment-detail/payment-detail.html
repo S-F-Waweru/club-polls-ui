@@ -68,7 +68,7 @@
               </div>
             }
 
-            @if (p.status === 'SUCCESS') {
+            @if (p.status === 'VERIFIED') {
               <div class="w-full mt-4 p-3 rounded-lg border border-green-500/30 bg-green-500/5 flex items-center gap-2 justify-center">
                 <i class="pi pi-check-circle text-green-400"></i>
                 <p class="text-xs text-green-400 font-medium">Payment Verified</p>
@@ -100,11 +100,11 @@
               }
               <div class="flex justify-between text-sm pt-2 border-t border-border-muted">
                 <span class="text-txt-muted">Recorded By</span>
-                <span class="text-txt-main font-medium">{{ p.recordedBy.name }}</span>
+                <span class="text-txt-main font-medium">{{ p.recordedBy?.name || 'System' }}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-txt-muted">Role</span>
-                <span class="text-txt-muted capitalize">{{ p.recordedBy.role }}</span>
+                <span class="text-txt-muted capitalize">{{ p.recordedBy?.role || 'auto' }}</span>
               </div>
             </div>
           </div>
@@ -182,7 +182,8 @@
             <i class="pi pi-times-circle text-red-400"></i> Reject Payment
           </button>
         }
-        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+        <button (click)="payment()?.id && store.downloadReceiptPdf(payment()!.id)"
+                class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
           <i class="pi pi-print text-blue-400"></i> Print Receipt
         </button>
         <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">

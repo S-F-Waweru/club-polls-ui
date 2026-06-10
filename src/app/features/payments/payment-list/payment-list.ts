@@ -1,11 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DashboardShellComponent } from '../../../core/components/DashboardShellComponent';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
-import { DatePipe, DecimalPipe, SlicePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
@@ -29,19 +29,23 @@ import { Payment, PaymentsStore } from '../../../state/payment.store';
   templateUrl: './payment-list.html',
   styleUrl: './payment-list.css',
 })
-export class PaymentListComponent {
-  private store = inject(PaymentsStore);
+export class PaymentListComponent implements OnInit {
+  store = inject(PaymentsStore);
   private confirm = inject(ConfirmationService);
 
   search = '';
   activeFilter = signal('All');
-  filters = ['All', 'PENDING', 'SUCCESS', 'FAILED'];
+  filters = ['All', 'PENDING', 'VERIFIED', 'FAILED'];
   methodFilters = ['All', 'MPESA', 'BANK', 'CASH'];
   activeMethod = signal('All');
 
   payments = this.store.entities;
   isLoading = this.store.isLoading;
   total = this.store.totalRecords;
+
+  ngOnInit() {
+    this.store.setPage(1);
+  }
 
   filtered = computed(() => {
     let list = this.payments();
@@ -61,7 +65,7 @@ export class PaymentListComponent {
 
   stats = computed(() => {
     const all = this.payments();
-    const success = all.filter((p) => p.status === 'SUCCESS');
+    const success = all.filter((p) => p.status === 'VERIFIED');
     const pending = all.filter((p) => p.status === 'PENDING').length;
     const failed = all.filter((p) => p.status === 'FAILED').length;
     const totalCollected = success.reduce((sum, p) => sum + p.amount, 0);
@@ -75,7 +79,7 @@ export class PaymentListComponent {
       {
         label: 'Collected',
         value: `KES ${totalCollected.toLocaleString()}`,
-        sub: 'Successful only',
+        sub: 'Verified only',
         color: 'var(--success)',
       },
       { label: 'Pending', value: pending, sub: 'Awaiting confirmation', color: 'var(--warn)' },
@@ -84,7 +88,7 @@ export class PaymentListComponent {
   });
 
   statusSeverity(status: string): 'success' | 'warn' | 'danger' | 'secondary' {
-    const map: Record<string, any> = { SUCCESS: 'success', PENDING: 'warn', FAILED: 'danger' };
+    const map: Record<string, any> = { VERIFIED: 'success', PENDING: 'warn', FAILED: 'danger' };
     return map[status] ?? 'secondary';
   }
 
@@ -135,4 +139,17 @@ export class PaymentListComponent {
       accept: () => this.store.deletePayment(p.id),
     });
   }
+
+  onPageChange(event: any) {
+    const newPage = (event.page ?? 0) + 1;
+    const newLimit = event.rows ?? this.store.limit();
+
+    if (newLimit !== this.store.limit()) {
+      this.store.setLimit(newLimit);
+    } else {
+      this.store.setPage(newPage);
+    }
+  }
+
+  protected readonly Math = Math;
 }

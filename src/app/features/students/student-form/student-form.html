@@ -44,6 +44,10 @@
           </div>
         }
         <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">National ID</label>
+          <input pInputText [(ngModel)]="form.nationalId" placeholder="12345678" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
           <label class="text-xs text-txt-muted">Date of Birth</label>
           <input pInputText type="date" [(ngModel)]="form.dateOfBirth" class="w-full text-sm" />
         </div>

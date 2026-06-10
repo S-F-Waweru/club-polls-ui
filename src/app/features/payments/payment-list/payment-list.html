@@ -69,10 +69,13 @@
           All Payments
           <span class="ml-2 text-xs font-normal text-txt-muted">({{ filtered().length }})</span>
         </h3>
+        <span class="text-[10px] text-txt-ghost">Page {{ store.page() }} of {{ Math.ceil(store.totalRecords() / store.limit()) || 1 }}</span>
       </div>
 
-      <p-table [value]="filtered()" responsiveLayout="scroll" [paginator]="true" [rows]="8"
-               [rowsPerPageOptions]="[8,15,25]" styleClass="p-datatable-sm">
+      <p-table [value]="filtered()" responsiveLayout="scroll" [paginator]="true" [lazy]="true"
+               [rows]="store.limit()" [first]="(store.page() - 1) * store.limit()"
+               [totalRecords]="store.totalRecords()" [loading]="isLoading()"
+               [rowsPerPageOptions]="[8,10,15,25]" (onPage)="onPageChange($event)" styleClass="p-datatable-sm">
 
         <ng-template pTemplate="header">
           <tr>
@@ -92,7 +95,7 @@
 
             <td class="py-3 px-5">
               <p class="text-xs font-semibold text-txt-main">{{ p.invoice.enrollment.student.fullName }}</p>
-              <p class="text-[10px] text-txt-muted">{{ p.invoice.enrollment.course.name }}</p>
+              <p class="text-[10px] text-txt-muted">{{ p.invoice.enrollment.course?.name || 'Course not loaded' }}</p>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <p-tag [value]="p.invoice.status" [severity]="invoiceSeverity(p.invoice.status)" />
                 <span class="text-[10px] text-txt-muted">KES {{ p.invoice.balance | number }} left</span>
@@ -117,12 +120,12 @@
             <td class="py-3 px-5">
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                     [style.background]="avatarBg(p.recordedBy.name)" style="color:white">
-                  {{ initials(p.recordedBy.name) }}
+                     [style.background]="avatarBg(p.recordedBy?.name || 'System')" style="color:white">
+                  {{ initials(p.recordedBy?.name || 'System') }}
                 </div>
                 <div>
-                  <p class="text-xs text-txt-main">{{ p.recordedBy.name }}</p>
-                  <p class="text-[10px] text-txt-muted capitalize">{{ p.recordedBy.role }}</p>
+                  <p class="text-xs text-txt-main">{{ p.recordedBy?.name || 'System' }}</p>
+                  <p class="text-[10px] text-txt-muted capitalize">{{ p.recordedBy?.role || 'auto' }}</p>
                 </div>
               </div>
             </td>
@@ -135,6 +138,11 @@
                         class="w-7 h-7 rounded flex items-center justify-center transition-colors"
                         style="color: var(--text-muted); border: 1px solid var(--border-default)" title="View">
                   <i class="pi pi-eye text-xs"></i>
+                </button>
+                <button (click)="store.downloadReceiptPdf(p.id)"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: var(--text-muted); border: 1px solid var(--border-default)" title="Print receipt">
+                  <i class="pi pi-print text-xs"></i>
                 </button>
                 <button (click)="confirmDelete(p)"
                         class="w-7 h-7 rounded flex items-center justify-center transition-colors"

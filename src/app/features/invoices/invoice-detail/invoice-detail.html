@@ -211,12 +211,13 @@
         <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
           <i class="pi pi-plus text-green-400"></i> Record Payment
         </button>
-        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+        <button (click)="invoice()?.id && store.downloadInvoicePdf(invoice()!.id)"
+                class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
           <i class="pi pi-print text-blue-400"></i> Print Invoice
         </button>
-        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
-          <i class="pi pi-envelope text-purple-400"></i> Send to Student
-        </button>
+<!--        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">-->
+<!--          <i class="pi pi-envelope text-purple-400"></i> Send to Student-->
+<!--        </button>-->
       </div>
     </div>
   </ng-container>
