@@ -1,1 +1,161 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+@import "primeicons/primeicons.css";
+
+/* ============================================
+   LAYER 1: RAW PRIMITIVES (never use directly)
+   Change brand color here = entire app updates
+   ============================================ */
+:root {
+  /* Brand — swap these 11 lines to rebrand entirely */
+  /*--primary-50:  #eef2ff; --primary-100: #e0e7ff; --primary-200: #c7d2fe;*/
+  /*--primary-300: #a5b4fc; --primary-400: #818cf8; --primary-500: #6366f1;*/
+  /*--primary-600: #4f46e5; --primary-700: #4338ca; --primary-800: #3730a3;*/
+  /*--primary-900: #312e81; --primary-950: #1e1b4b;*/
+  /* --- Deep Crimson Palette --- */
+  --primary-50:  #fff5f5;
+  --primary-100: #ffe3e3;
+  --primary-200: #ffc9c9;
+  --primary-300: #ffa3a3;
+  --primary-400: #ff6b6b;
+  --primary-500: #e03131; /* Main Interactive Brand Core */
+  --primary-600: #c92a2a;
+  --primary-700: #b01e1e;
+  --primary-800: #961717;
+  --primary-900: #5c0e0e;
+  --primary-950: #2b0505; /* Deep Base Glow Accents */
+
+  /* Neutrals */
+  --slate-50:  #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+  --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+  --slate-900: #0f172a; --slate-950: #020617;
+
+  /* Status */
+  --success: #22c55e; --warning: #f59e0b;
+  --danger:  #ef4444; --info:    #3b82f6;
+
+  /* Shape */
+  --radius-sm: 6px; --radius-md: 10px;
+  --radius-lg: 14px; --radius-xl: 20px;
+
+  /* Type *//* High-end geometric sans-serif for dashboard headers, inputs, and labels */
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Razor-sharp monospace for ledger amounts, transaction tokens, and timestamps */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing */
+  --spacing-form-x: 0.75rem;
+  --spacing-form-y: 0.5rem;
+
+  /* ============================================
+     LAYER 2: SEMANTIC TOKENS — LIGHT (DEFAULT)
+     This is what components actually use
+     ============================================ */
+
+  /* Surfaces */
+  --bg-app:     var(--slate-50);
+  --bg-panel:   #ffffff;
+  --bg-surface: var(--slate-100);
+  --bg-subtle:  var(--slate-200);
+
+  /* Borders */
+  --border-default: var(--slate-200);
+  --border-muted:   var(--slate-300);
+  --border-brand:   color-mix(in srgb, var(--primary-500) 30%, transparent);
+
+  /* Text */
+  --text-primary: var(--slate-900);
+  --text-muted:   var(--slate-500);
+  --text-ghost:   var(--slate-400);
+  --text-inverse: #ffffff;
+
+  /* Brand interactive */
+  --brand:       var(--primary-600);
+  --brand-hover: var(--primary-700);
+  --brand-soft:  var(--primary-50);
+
+  /* Shadows */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06);
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px var(--border-default);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.10);
+
+  /* Grid overlay (dashboard shell) */
+  --grid-line: color-mix(in srgb, var(--primary-500) 5%, transparent);
+}
+
+/* ============================================
+   LAYER 3: DARK MODE OVERRIDES
+   Only semantic tokens change — primitives stay
+   ============================================ */
+.dark {
+  --bg-app:     var(--slate-950);
+  --bg-panel:   color-mix(in srgb, var(--slate-900) 70%, transparent);
+  --bg-surface: color-mix(in srgb, var(--slate-800) 60%, transparent);
+  --bg-subtle:  var(--slate-800);
+
+  --border-default: color-mix(in srgb, var(--slate-700) 40%, transparent);
+  --border-muted:   color-mix(in srgb, var(--slate-600) 50%, transparent);
+  --border-brand:   color-mix(in srgb, var(--primary-500) 20%, transparent);
+
+  --text-primary: var(--slate-50);
+  --text-muted:   var(--slate-400);
+  --text-ghost:   var(--slate-500);
+
+  --brand:       var(--primary-400);
+  --brand-hover: var(--primary-300);
+  --brand-soft:  color-mix(in srgb, var(--primary-950) 80%, transparent);
+
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.3);
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 1px var(--border-default);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.5);
+
+  --grid-line: color-mix(in srgb, var(--primary-500) 4%, transparent);
+}
+
+/* ============================================
+   LAYER 4: TAILWIND THEME MAPPING
+   Gives you bg-app, text-txt-main, etc.
+   ============================================ */
+@theme {
+  /* Surfaces */
+  --color-app-bg:      var(--bg-app);
+  --color-panel-bg:    var(--bg-panel);
+  --color-surface-bg:  var(--bg-surface);
+  --color-subtle-bg:   var(--bg-subtle);
+
+  /* Borders */
+  --color-border-default: var(--border-default);
+  --color-border-muted:   var(--border-muted);
+  --color-border-brand:   var(--border-brand);
+
+  /* Text */
+  --color-txt-main:    var(--text-primary);
+  --color-txt-muted:   var(--text-muted);
+  --color-txt-ghost:   var(--text-ghost);
+  --color-txt-inverse: var(--text-inverse);
+
+  /* Brand */
+  --color-brand:       var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft:  var(--brand-soft);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger:  var(--danger);
+  --color-info:    var(--info);
+
+  /* Passthrough primaries for preset */
+  --color-primary-500: var(--primary-500);
+  --color-primary-400: var(--primary-400);
+
+  /* Type */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Radii */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}

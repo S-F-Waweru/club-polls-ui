@@ -1,0 +1,98 @@
+<!-- student-form.html -->
+<app-dashboard-shell>
+
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-user-plus text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">{{ isEdit ? 'Edit Student' : 'Admit Student' }}</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ isEdit ? 'Update student details' : 'Register a new student' }}</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <p-button label="Cancel" icon="pi pi-times" size="small" [outlined]="true" severity="secondary" routerLink="/students" />
+      <p-button [label]="isEdit ? 'Save Changes' : 'Admit Student'" icon="pi pi-check" size="small" severity="primary" (onClick)="submit()" />
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-400">
+      <i class="pi pi-exclamation-circle mr-2"></i>{{ store.error() }}
+    </div>
+  }
+
+  <ng-container main-content>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <!-- Personal Info -->
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+          <i class="pi pi-user text-primary-400"></i> Personal Information
+        </h3>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Full Name *</label>
+          <input pInputText [(ngModel)]="form.fullName" placeholder="John Kamau" class="w-full text-sm" />
+        </div>
+        @if (isEdit) {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Student ID</label>
+            <input pInputText [(ngModel)]="form.studentId" class="w-full text-sm opacity-60" [readOnly]="true" />
+          </div>
+        }
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Date of Birth</label>
+          <input pInputText type="date" [(ngModel)]="form.dateOfBirth" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Address</label>
+          <input pInputText [(ngModel)]="form.address" placeholder="123 Nairobi" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Status</label>
+          <p-select [(ngModel)]="form.status" [options]="statusOptions" class="w-full text-sm" />
+        </div>
+      </div>
+
+      <!-- Contact + Guardian -->
+      <div class="flex flex-col gap-4">
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+          <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+            <i class="pi pi-phone text-primary-400"></i> Contact Information
+          </h3>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Email *</label>
+            <input pInputText type="email" [(ngModel)]="form.email" placeholder="john@example.com" class="w-full text-sm" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Phone *</label>
+            <input pInputText [(ngModel)]="form.phone" placeholder="0712345678" class="w-full text-sm" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Admission Date *</label>
+            <input pInputText type="date" [(ngModel)]="form.admissionDate" class="w-full text-sm" />
+          </div>
+        </div>
+
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+          <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+            <i class="pi pi-users text-primary-400"></i> Guardian Information
+          </h3>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Guardian Name</label>
+            <input pInputText [(ngModel)]="form.guardianName" placeholder="Jane Kamau" class="w-full text-sm" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Guardian Phone</label>
+            <input pInputText [(ngModel)]="form.guardianPhone" placeholder="0723456789" class="w-full text-sm" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+
+</app-dashboard-shell>

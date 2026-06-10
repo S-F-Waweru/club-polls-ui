@@ -1,0 +1,180 @@
+<app-dashboard-shell>
+
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-credit-card text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Payments</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ total() }} payment records</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <p-button label="Export" icon="pi pi-download" size="small" [outlined]="true" severity="secondary" />
+      <p-button label="Record Payment" icon="pi pi-plus" size="small" severity="primary" routerLink="/payments/new" />
+    </div>
+  </div>
+
+  <ng-container main-content>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for (stat of stats(); track stat.label) {
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-txt-muted">{{ stat.label }}</span>
+          <h3 class="text-2xl font-bold tracking-tight text-txt-main mt-1">{{ stat.value }}</h3>
+          <span class="text-[11px]" [style.color]="stat.color">{{ stat.sub }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Filters -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="relative flex-1 min-w-50">
+        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-txt-ghost text-sm"></i>
+        <input pInputText type="text" placeholder="Search by ref or recorded by..."
+               [(ngModel)]="search" class="w-full pl-9 text-sm"
+               style="background: var(--bg-panel); border-color: var(--border-default); color: var(--text-primary);" />
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        @for (f of filters; track f) {
+          <button (click)="activeFilter.set(f)"
+                  class="px-3 py-1.5 rounded-md text-xs font-medium border transition-all"
+                  [style.background]="activeFilter() === f ? 'color-mix(in srgb, var(--primary-500) 12%, transparent)' : 'transparent'"
+                  [style.borderColor]="activeFilter() === f ? 'color-mix(in srgb, var(--primary-500) 30%, transparent)' : 'var(--border-default)'"
+                  [style.color]="activeFilter() === f ? 'var(--primary-500)' : 'var(--text-muted)'">
+            {{ f }}
+          </button>
+        }
+        <span class="text-border-muted">|</span>
+        @for (m of methodFilters; track m) {
+          <button (click)="activeMethod.set(m)"
+                  class="px-3 py-1.5 rounded-md text-xs font-medium border transition-all"
+                  [style.background]="activeMethod() === m ? 'color-mix(in srgb, var(--primary-500) 12%, transparent)' : 'transparent'"
+                  [style.borderColor]="activeMethod() === m ? 'color-mix(in srgb, var(--primary-500) 30%, transparent)' : 'var(--border-default)'"
+                  [style.color]="activeMethod() === m ? 'var(--primary-500)' : 'var(--text-muted)'">
+            {{ m }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl overflow-hidden backdrop-blur-xl">
+      <div class="p-5 border-b border-border-muted flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">
+          All Payments
+          <span class="ml-2 text-xs font-normal text-txt-muted">({{ filtered().length }})</span>
+        </h3>
+      </div>
+
+      <p-table [value]="filtered()" responsiveLayout="scroll" [paginator]="true" [rows]="8"
+               [rowsPerPageOptions]="[8,15,25]" styleClass="p-datatable-sm">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Student</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Ref</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Method</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Amount</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Status</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Recorded By</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Paid At</th>
+            <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5"></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-p>
+          <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+
+            <td class="py-3 px-5">
+              <p class="text-xs font-semibold text-txt-main">{{ p.invoice.enrollment.student.fullName }}</p>
+              <p class="text-[10px] text-txt-muted">{{ p.invoice.enrollment.course.name }}</p>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <p-tag [value]="p.invoice.status" [severity]="invoiceSeverity(p.invoice.status)" />
+                <span class="text-[10px] text-txt-muted">KES {{ p.invoice.balance | number }} left</span>
+              </div>
+            </td>
+
+            <td class="py-3 px-5 font-mono text-xs text-txt-muted">{{ p.transactionRef }}</td>
+
+            <td class="py-3 px-5">
+              <span class="flex items-center gap-1.5 text-xs font-medium">
+                <i [class]="methodIcon(p.method)" [style.color]="methodColor(p.method)"></i>
+                <span [style.color]="methodColor(p.method)">{{ p.method }}</span>
+              </span>
+            </td>
+
+            <td class="py-3 px-5 text-xs font-semibold text-txt-main">KES {{ p.amount | number }}</td>
+
+            <td class="py-3 px-5">
+              <p-tag [value]="p.status" [severity]="statusSeverity(p.status)" />
+            </td>
+
+            <td class="py-3 px-5">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                     [style.background]="avatarBg(p.recordedBy.name)" style="color:white">
+                  {{ initials(p.recordedBy.name) }}
+                </div>
+                <div>
+                  <p class="text-xs text-txt-main">{{ p.recordedBy.name }}</p>
+                  <p class="text-[10px] text-txt-muted capitalize">{{ p.recordedBy.role }}</p>
+                </div>
+              </div>
+            </td>
+
+            <td class="py-3 px-5 text-xs text-txt-muted">{{ p.paid_at | date:'mediumDate' }}</td>
+
+            <td class="py-3 px-5">
+              <div class="flex items-center gap-1">
+                <button [routerLink]="['/payments', p.id]"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: var(--text-muted); border: 1px solid var(--border-default)" title="View">
+                  <i class="pi pi-eye text-xs"></i>
+                </button>
+                <button (click)="confirmDelete(p)"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: #ef4444; border: 1px solid #ef444440" title="Delete">
+                  <i class="pi pi-trash text-xs"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="py-12 text-center text-xs text-txt-muted">
+              <i class="pi pi-search text-2xl block mb-2 opacity-30"></i>
+              No payments match your search.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+    <p-confirmDialog />
+  </ng-container>
+
+  <ng-container side-panel>
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Quick Actions</h3>
+      <div class="flex flex-col gap-2">
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition"
+                routerLink="/payments/new">
+          <i class="pi pi-plus text-green-400"></i> Record Payment
+        </button>
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-file-export text-amber-400"></i> Export CSV
+        </button>
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-chart-bar text-blue-400"></i> View Reports
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+</app-dashboard-shell>

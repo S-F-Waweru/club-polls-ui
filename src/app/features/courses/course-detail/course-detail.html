@@ -1,0 +1,267 @@
+<app-dashboard-shell>
+
+  <!-- Header -->
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-book text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Course Details</h1>
+        <p class="text-xs text-txt-muted mt-0.5">View and manage course information</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      @if (course();) {
+        <p-button label="Edit" icon="pi pi-pencil" size="small" severity="primary"
+                  [routerLink]="['/courses', course()!.id, 'edit']" />
+      }
+      <p-button label="Back" icon="pi pi-arrow-left" size="small" [outlined]="true"
+                severity="secondary" routerLink="/courses" />
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <ng-container main-content>
+    @if (isLoading()) {
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-1">
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4">
+            <p-skeleton shape="circle" size="6rem" class="mx-auto mb-3" />
+            <p-skeleton width="60%" class="mx-auto" />
+            <p-skeleton width="40%" class="mx-auto mt-2" />
+          </div>
+        </div>
+        <div class="lg:col-span-2">
+          <p-skeleton height="150px" class="mb-4" />
+          <p-skeleton height="150px" />
+        </div>
+      </div>
+    } @else if (error()) {
+      <div class="border border-red-500/30 bg-red-500/10 rounded-xl p-12 text-center">
+        <i class="pi pi-exclamation-triangle text-4xl text-red-400 mb-3 block"></i>
+        <p class="text-txt-main">{{ error() }}</p>
+        <p-button label="Back to Courses" icon="pi pi-arrow-left" size="small"
+                  severity="primary" routerLink="/courses" class="mt-4" />
+      </div>
+    } @else if (course(); as c) {
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Left column: Avatar + basic info -->
+        <div class="lg:col-span-1">
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col items-center text-center h-full">
+            <div class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold mb-3"
+                 style="background: #6366f1; color: white">
+              {{ getInitials(c.name) }}
+            </div>
+            <h2 class="text-xl font-bold text-txt-main">{{ c.name }}</h2>
+            <p class="text-sm text-txt-muted">{{ c.code }}</p>
+            <p-tag [value]="c.isActive ? 'Active' : 'Inactive'"
+                   [severity]="statusSeverity(c.isActive)" class="mt-2" />
+            <div class="w-full mt-6 pt-6 border-t border-border-muted">
+              <div class="flex justify-between text-sm mb-2">
+                <span class="text-txt-muted">Duration</span>
+                <span class="text-txt-main font-medium">{{ c.durationWeeks }} weeks</span>
+              </div>
+              <div class="flex justify-between text-sm mb-2">
+                <span class="text-txt-muted">Max Capacity</span>
+                <span class="text-txt-main font-medium">{{ c.maxCapacity }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-txt-muted">Created</span>
+                <span class="text-txt-main font-medium">{{ c.createdAt | date:'mediumDate' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: detailed info -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+          <!-- Description -->
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+            <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+              <i class="pi pi-align-left text-sm text-primary-400"></i> Description
+            </h3>
+            <p class="text-sm text-txt-muted leading-relaxed">{{ c.description }}</p>
+          </div>
+
+          <!-- Fee Structure Card -->
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+            <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+              <i class="pi pi-dollar text-sm text-primary-400"></i> Fee Structure
+            </h3>
+            @if (c.feeStructure) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <p class="text-xs text-txt-muted mb-1">Total Amount</p>
+                  <p class="text-2xl font-bold text-txt-main">KES {{ c.feeStructure.totalAmount | number }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-txt-muted mb-1">Installments</p>
+                  <p class="text-sm text-txt-main">{{ c.feeStructure.instalments }} ({{ c.feeStructure.instalment_amount | number }} per installment)</p>
+                </div>
+              </div>
+            } @else {
+              <p class="text-sm text-txt-muted italic">No fee structure defined for this course.</p>
+            }
+          </div>
+
+          <!-- Additional details row -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+              <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+                <i class="pi pi-chart-line text-sm text-primary-400"></i> Level
+              </h3>
+              <p class="text-sm text-txt-main">{{ c.level }}</p>
+            </div>
+            <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+              <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+                <i class="pi pi-clock text-sm text-primary-400"></i> Duration
+              </h3>
+              <p class="text-sm text-txt-main">{{ c.durationWeeks }} weeks (approx. {{ c.durationWeeks * 5 }} days)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-12 text-center">
+        <i class="pi pi-exclamation-triangle text-4xl text-txt-muted mb-3 block"></i>
+        <p class="text-txt-muted">Course not found.</p>
+        <p-button label="Back to List" icon="pi pi-arrow-left" size="small"
+                  severity="primary" routerLink="/courses" class="mt-4" />
+      </div>
+    }
+  </ng-container>
+
+  <!-- Bottom tabs: Enrollments, etc. -->
+  <ng-container bottom-main-content>
+    @if (course(); as c) {
+      <div class="border border-border-muted bg-panel-bg rounded-xl backdrop-blur-xl">
+        <p-tabs value="0">
+          <p-tablist>
+            <p-tab value="0">Enrolled Students</p-tab>
+            <p-tab value="1">Invoices</p-tab>
+            <p-tab value="2">Balance</p-tab>
+          </p-tablist>
+
+          <p-tabpanels>
+            <!-- ENROLLED STUDENTS -->
+            <p-tabpanel value="0">
+              <div class="p-3">
+                @if (enrollments().length) {
+                  <table  class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Student</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">ID</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Enrolled On</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (e of enrollments(); track e.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-main font-medium">{{ e.student.fullName }}</td>
+                          <td class="py-2 px-3 font-mono text-xs" style="color: var(--primary-400)">{{ e.student.studentId }}</td>
+                          <td class="py-2 px-3"><p-tag [value]="e.status" [severity]="statusSeverity(e.status)" /></td>
+                          <td class="py-2 px-3 text-txt-muted">{{ e.enrolled_at | date:'mediumDate' }}</td>
+                          <td class="py-2 px-3">
+                            <a [routerLink]="['/students', e.student.studentId]" class="text-xs" style="color: var(--primary-400)">View →</a>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No students currently enrolled in this course.</p>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- INVOICES -->
+            <p-tabpanel value="1">
+              <div class="p-3">
+                @if (enrollments().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Student</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Total</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Balance</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Issued</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (e of enrollments(); track e.id) {
+                        @if (e.invoice) {
+                          <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                            <td class="py-2 px-3 text-txt-main font-medium">{{ e.student.fullName }}</td>
+                            <td class="py-2 px-3 text-txt-main">KES {{ e.invoice.totalAmount | number }}</td>
+                            <td class="py-2 px-3 text-txt-main">KES {{ e.invoice.balance | number }}</td>
+                            <td class="py-2 px-3"><p-tag [value]="e.invoice.status" [severity]="statusSeverity(e.invoice.status)" /></td>
+                            <td class="py-2 px-3 text-txt-muted">{{ e.invoice.issued_at | date:'mediumDate' }}</td>
+                            <td class="py-2 px-3">
+                              <a [routerLink]="['/invoices', e.invoice.id]" class="text-xs" style="color: var(--primary-400)">View →</a>
+                            </td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No invoices found.</p>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- BALANCE SUMMARY -->
+            <p-tabpanel value="2">
+              <div class="p-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Total Billed</p>
+                  <p class="text-2xl font-bold text-txt-main">KES {{ balanceSummary().totalBilled | number }}</p>
+                </div>
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Total Paid</p>
+                  <p class="text-2xl font-bold text-green-400">KES {{ balanceSummary().totalPaid | number }}</p>
+                </div>
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Outstanding</p>
+                  <p class="text-2xl font-bold"
+                     [class.text-red-400]="balanceSummary().totalBalance > 0"
+                     [class.text-green-400]="balanceSummary().totalBalance === 0">
+                    KES {{ balanceSummary().totalBalance | number }}
+                  </p>
+                </div>
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
+        </p-tabs>
+      </div>
+    }
+  </ng-container>
+
+  <!-- Side panel -->
+  <ng-container side-panel>
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight mb-3">Quick Actions</h3>
+      <div class="flex flex-col gap-2">
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-user-plus text-green-400"></i> Enroll Student
+        </button>
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-dollar text-blue-400"></i> Update Fee
+        </button>
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-chart-line text-purple-400"></i> View Analytics
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+</app-dashboard-shell>

@@ -1,0 +1,304 @@
+<app-dashboard-shell>
+
+  <!-- Header (unchanged) -->
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-user text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Student Details</h1>
+        <p class="text-xs text-txt-muted mt-0.5">View and manage student information</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      @if(student()){
+        <p-button
+          (click)="store.exportStudentPayment({ student_id: currentStudentId! })"
+          label="Export"
+          icon="pi pi-download"
+          size="small"
+          [outlined]="true"
+          severity="secondary" />
+      }
+      <p-button label="Edit" icon="pi pi-pencil" size="small" severity="primary" [routerLink]="['/students', student()?.studentId, 'edit']" />
+      <p-button label="Back" icon="pi pi-arrow-left" size="small" [outlined]="true" severity="secondary" routerLink="/students" />
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <ng-container main-content>
+    @if (student(); as s) {
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Left column: Avatar + basic info -->
+        <div class="lg:col-span-1">
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col items-center text-center h-full">
+            <div class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold mb-3"
+                 style="background: #6366f1; color: white">
+              {{ getInitials(s.fullName) }}
+            </div>
+            <h2 class="text-xl font-bold text-txt-main">{{ s.fullName }}</h2>
+            <p class="text-sm text-txt-muted">{{ s.studentId }}</p>
+            <p-tag [value]="s.status" [severity]="statusSeverity(s.status)" class="mt-2" />
+            <div class="w-full mt-6 pt-6 border-t border-border-muted">
+              <div class="flex justify-between text-sm mb-2">
+                <span class="text-txt-muted">Admission Date</span>
+                <span class="text-txt-main font-medium">{{ s.admissionDate | date:'mediumDate' }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-txt-muted">Created At</span>
+                <span class="text-txt-main font-medium">{{ s.createdAt | date:'mediumDate' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: detailed info (2/3 width) -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+          <!-- Contact Information (full width) -->
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+            <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+              <i class="pi pi-phone text-sm text-primary-400"></i> Contact Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-xs text-txt-muted mb-1">Email Address</p>
+                <p class="text-sm text-txt-main">{{ s.email }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-txt-muted mb-1">Phone Number</p>
+                <p class="text-sm text-txt-main">{{ s.phone }}</p>
+              </div>
+              @if (s.address) {
+                <div class="md:col-span-2">
+                  <p class="text-xs text-txt-muted mb-1">Physical Address</p>
+                  <p class="text-sm text-txt-main">{{ s.address }}</p>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Row with two equal-height columns: Personal Details & Guardian Information -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Personal Details Card -->
+            <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col h-full">
+              <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+                <i class="pi pi-user text-sm text-primary-400"></i> Personal Details
+              </h3>
+              <div class="space-y-2">
+                <div>
+                  <p class="text-xs text-txt-muted mb-1">Full Name</p>
+                  <p class="text-sm text-txt-main">{{ s.fullName }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-txt-muted mb-1">Student ID</p>
+                  <p class="text-sm text-txt-main font-mono">{{ s.studentId }}</p>
+                </div>
+                @if (s.dateOfBirth) {
+                  <div>
+                    <p class="text-xs text-txt-muted mb-1">Date of Birth</p>
+                    <p class="text-sm text-txt-main">{{ s.dateOfBirth | date:'mediumDate' }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Guardian Information Card (if available, else show placeholder) -->
+            <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col h-full">
+              <h3 class="text-md font-semibold text-txt-main mb-3 flex items-center gap-2">
+                <i class="pi pi-users text-sm text-primary-400"></i> Guardian Information
+              </h3>
+              @if (s.guardianName || s.guardianPhone) {
+                <div class="space-y-2">
+                  <div>
+                    <p class="text-xs text-txt-muted mb-1">Guardian Name</p>
+                    <p class="text-sm text-txt-main">{{ s.guardianName || '—' }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-txt-muted mb-1">Guardian Phone</p>
+                    <p class="text-sm text-txt-main">{{ s.guardianPhone || '—' }}</p>
+                  </div>
+                </div>
+              } @else {
+                <p class="text-sm text-txt-muted italic">No guardian information provided.</p>
+              }
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+    } @else {
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-12 text-center">
+        <i class="pi pi-exclamation-triangle text-4xl text-txt-muted mb-3 block"></i>
+        <p class="text-txt-muted">Student not found.</p>
+        <p-button label="Back to List" icon="pi pi-arrow-left" size="small" severity="primary" routerLink="/students" class="mt-4" />
+      </div>
+    }
+  </ng-container>
+
+  <ng-container bottom-main-content>
+    @if (student(); as s) {
+      <div class="border border-border-muted bg-panel-bg rounded-xl backdrop-blur-xl">
+        <p-tabs value="0">
+          <p-tablist>
+            <p-tab value="0">Enrollments</p-tab>
+            <p-tab value="1">Invoices</p-tab>
+            <p-tab value="2">Payments</p-tab>
+            <p-tab value="3">Balance</p-tab>
+          </p-tablist>
+
+          <p-tabpanels>
+            <!-- ENROLLMENTS -->
+            <p-tabpanel value="0">
+              <div class="p-3">
+                @if (student()?.enrollments?.length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Course</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Code</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Level</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Enrolled At</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (e of student()?.enrollments; track e.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-main font-medium">{{ e.course.name }}</td>
+                          <td class="py-2 px-3 font-mono text-xs" style="color: var(--primary-400)">{{ e.course.code }}</td>
+                          <td class="py-2 px-3 text-txt-muted">{{ e.course.level }}</td>
+                          <td class="py-2 px-3"><p-tag [value]="e.status" [severity]="statusSeverity(e.status)" /></td>
+                          <td class="py-2 px-3 text-txt-muted">{{ e.enrolled_at | date:'mediumDate' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No enrollments found.</p>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- INVOICES -->
+            <p-tabpanel value="1">
+              <div class="p-3">
+                @if (allInvoices().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Course</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Total</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Balance</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Issued</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (inv of allInvoices(); track inv.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-main font-medium">{{ inv.courseName }}</td>
+                          <td class="py-2 px-3 text-txt-main">KES {{ inv.totalAmount | number }}</td>
+                          <td class="py-2 px-3 text-txt-main">KES {{ inv.balance | number }}</td>
+                          <td class="py-2 px-3"><p-tag [value]="inv.status" [severity]="statusSeverity(inv.status)" /></td>
+                          <td class="py-2 px-3 text-txt-muted">{{ inv.issued_at | date:'mediumDate' }}</td>
+                          <td class="py-2 px-3">
+                            <a [routerLink]="['/invoices', inv.id]" class="text-xs" style="color: var(--primary-400)">View →</a>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No invoices found.</p>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- PAYMENTS -->
+            <p-tabpanel value="2">
+              <div class="p-3">
+                @if (allPayments().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Course</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Amount</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Method</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Ref</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Status</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Paid At</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (p of allPayments(); track p.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-main">{{ p.courseName }}</td>
+                          <td class="py-2 px-3 text-txt-main font-medium">KES {{ p.amount | number }}</td>
+                          <td class="py-2 px-3 text-txt-muted">{{ p.method }}</td>
+                          <td class="py-2 px-3 font-mono text-xs text-txt-muted">{{ p.transactionRef || '—' }}</td>
+                          <td class="py-2 px-3"><p-tag [value]="p.status" [severity]="statusSeverity(p.status)" /></td>
+                          <td class="py-2 px-3 text-txt-muted">{{ p.paid_at | date:'mediumDate' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No payments found.</p>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- BALANCE -->
+            <p-tabpanel value="3">
+              <div class="p-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Total Billed</p>
+                  <p class="text-2xl font-bold text-txt-main">KES {{ balanceSummary().totalBilled | number }}</p>
+                </div>
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Total Paid</p>
+                  <p class="text-2xl font-bold text-green-400">KES {{ balanceSummary().totalPaid | number }}</p>
+                </div>
+                <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                  <p class="text-xs text-txt-muted uppercase font-medium">Outstanding Balance</p>
+                  <p class="text-2xl font-bold" [class.text-red-400]="balanceSummary().totalBalance > 0" [class.text-green-400]="balanceSummary().totalBalance === 0">
+                    KES {{ balanceSummary().totalBalance | number }}
+                  </p>
+                </div>
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
+        </p-tabs>
+      </div>
+    }
+  </ng-container>
+
+  <!-- Side panel (optional quick actions) -->
+  <ng-container side-panel>
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight mb-3">Quick Actions</h3>
+      <div class="flex flex-col gap-2">
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-receipt text-green-400"></i> Generate Invoice
+        </button>
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-history text-blue-400"></i> Payment History
+        </button>
+        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
+          <i class="pi pi-envelope text-purple-400"></i> Send Notification
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+
+
+
+</app-dashboard-shell>
+

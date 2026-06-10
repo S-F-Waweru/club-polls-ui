@@ -1,0 +1,87 @@
+<app-dashboard-shell>
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-book text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">{{ isEdit ? 'Edit Course' : 'New Course' }}</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ isEdit ? 'Update course details' : 'Create a new course' }}</p>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <p-button label="Cancel" icon="pi pi-times" size="small" [outlined]="true" severity="secondary" routerLink="/courses" />
+      <p-button [label]="isEdit ? 'Save Changes' : 'Create Course'" icon="pi pi-check" size="small" (onClick)="submit()" />
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-400">
+      <i class="pi pi-exclamation-circle mr-2"></i>{{ store.error() }}
+    </div>
+  }
+
+  <ng-container main-content>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <!-- Course Info -->
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+          <i class="pi pi-book text-primary-400"></i> Course Details
+        </h3>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Course Code *</label>
+          <input pInputText [(ngModel)]="form.code" placeholder="ACC-101" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Course Name *</label>
+          <input pInputText [(ngModel)]="form.name" placeholder="Accounting" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Description *</label>
+          <textarea pInputText [(ngModel)]="form.description" rows="3" placeholder="Course description..." class="w-full text-sm"></textarea>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Level *</label>
+          <p-select [(ngModel)]="form.level" [options]="levelOptions" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Duration (weeks) *</label>
+          <input pInputText type="number" [(ngModel)]="form.durationWeeks" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Max Capacity</label>
+          <input pInputText type="number" [(ngModel)]="form.maxCapacity" class="w-full text-sm" />
+        </div>
+        <div class="flex items-center gap-2">
+          <p-toggleswitch [(ngModel)]="form.isActive" />
+          <label class="text-xs text-txt-muted">Active</label>
+        </div>
+      </div>
+
+      <!-- Fee Structure -->
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+          <i class="pi pi-wallet text-primary-400"></i> Fee Structure
+        </h3>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Total Amount (KES) *</label>
+          <input pInputText type="number" [(ngModel)]="fee.totalAmount" placeholder="30000" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Instalments *</label>
+          <input pInputText type="number" [(ngModel)]="fee.instalments" placeholder="3" class="w-full text-sm" />
+        </div>
+        @if (fee.totalAmount && fee.instalments) {
+          <div class="rounded-lg p-3 text-xs" style="background: color-mix(in srgb, var(--primary-500) 8%, transparent)">
+            <span class="text-txt-muted">Per instalment: </span>
+            <span class="font-semibold text-txt-main">KES {{ fee.totalAmount / fee.instalments | number:'1.0-0' }}</span>
+          </div>
+        }
+      </div>
+
+    </div>
+  </ng-container>
+</app-dashboard-shell>

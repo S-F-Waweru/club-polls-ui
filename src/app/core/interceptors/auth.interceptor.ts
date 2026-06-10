@@ -9,6 +9,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, throwError, EMPTY } from 'rxjs';
 import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 // ============================================================================
 // Refresh lock
@@ -36,7 +37,7 @@ export const authInterceptor: HttpInterceptorFn = (
     catchError((error: HttpErrorResponse) => {
       // Only handle 401 (Unauthorized) errors
       // Skip the refresh endpoint itself to avoid infinite loops
-      if (error.status !== 401 || req.url.includes('/auth/refresh')) {
+      if (error.status !== 401 || req.url.includes(`${environment.apiUrl}auth/refresh`)) {
         return throwError(() => error);
       }
 
@@ -45,7 +46,7 @@ export const authInterceptor: HttpInterceptorFn = (
         isRefreshing = true;
         refreshDone$.next(false);
 
-        return http.post<void>('/api/auth/refresh', {}, { withCredentials: true }).pipe(
+        return http.post<void>(`${environment.apiUrl}auth/refresh`, {}, { withCredentials: true }).pipe(
           tap(() => {
             isRefreshing = false;
             refreshDone$.next(true); // signal that refresh is done
@@ -59,7 +60,7 @@ export const authInterceptor: HttpInterceptorFn = (
             isRefreshing = false;
             refreshDone$.next(false);
             router.navigate(['/login']);
-            return EMPTY;
+            return throwError(() => new Error('Session expired'));
           }),
         );
       }
