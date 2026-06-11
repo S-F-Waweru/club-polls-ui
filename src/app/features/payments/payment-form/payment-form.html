@@ -1,5 +1,4 @@
 <app-dashboard-shell>
-
   <div header class="w-full flex justify-between items-center flex-wrap gap-4">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
@@ -8,13 +7,19 @@
         <i class="pi pi-credit-card text-lg" style="color: var(--primary-500)"></i>
       </div>
       <div>
-        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Record Payment</h1>
-        <p class="text-xs text-txt-muted mt-0.5">Log a new payment against an invoice</p>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">{{ isAdmin() ? 'Record Payment' : 'Pay Club Fee' }}</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ isAdmin() ? 'Record joining or membership fee' : 'Start an M-Pesa fee payment' }}</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
       <p-button label="Cancel" icon="pi pi-times" size="small" [outlined]="true" severity="secondary" routerLink="/payments" />
-      <p-button label="Record Payment" icon="pi pi-check" size="small" severity="primary" (onClick)="submit()" />
+      <p-button
+        [label]="isAdmin() ? 'Record Payment' : 'Send M-Pesa Request'"
+        icon="pi pi-check"
+        size="small"
+        severity="primary"
+        [loading]="store.isLoading()"
+        (onClick)="submit()" />
     </div>
   </div>
 
@@ -25,119 +30,121 @@
   }
 
   <ng-container main-content>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    @if (isAdmin()) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+          <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+            <i class="pi pi-user text-primary-400"></i> Member Fee
+          </h3>
 
-      <!-- Payment details -->
-      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
-        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
-          <i class="pi pi-credit-card text-primary-400"></i> Payment Details
-        </h3>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Member ID *</label>
+            <input pInputText [(ngModel)]="adminForm.memberId" placeholder="M-000-001" class="w-full text-sm font-mono" />
+          </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-txt-muted">Invoice *</label>
-          <p-select
-            [(ngModel)]="form.invoiceId"
-            [options]="invoiceSelectOptions()"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Select student / invoice"
-            [filter]="true"
-            filterBy="label"
-            class="w-full text-sm" />
-          <!-- show invoice label as student + course once selected -->
-          @if (selectedInvoice; as inv) {
-            <p class="text-xs text-txt-muted mt-1">
-              <span class="font-medium" style="color: var(--primary-400)">
-                {{ inv.enrollment.student.fullName }}
-              </span>
-              — {{ inv.enrollment.course.name }}
-              <span class="ml-2">
-                Balance: <span class="text-red-400 font-semibold">KES {{ inv.balance | number }}</span>
-              </span>
-            </p>
-          }
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-txt-muted">Amount (KES) *</label>
-          <input pInputText type="number" [(ngModel)]="form.amount" placeholder="5000" class="w-full text-sm" />
-          @if (selectedInvoice && form.amount > selectedInvoice.balance) {
-            <p class="text-xs text-red-400 mt-1">
-              <i class="pi pi-exclamation-circle mr-1"></i>Amount exceeds invoice balance of KES {{ selectedInvoice.balance | number }}
-            </p>
-          }
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-txt-muted">Payment Method *</label>
-          <p-select [(ngModel)]="form.method" [options]="methodOptions" class="w-full text-sm" />
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-txt-muted">Transaction Reference *</label>
-          <input pInputText [(ngModel)]="form.transactionRef" placeholder="e.g. QHJ83KL92P" class="w-full text-sm" />
-          <p class="text-[10px] text-txt-ghost mt-0.5">M-Pesa code, bank ref, or cash receipt number</p>
-        </div>
-
-        <div class="flex flex-col gap-1">
-          <label class="text-xs text-txt-muted">Payment Date</label>
-          <input pInputText type="date" [(ngModel)]="form.paid_at" class="w-full text-sm" />
-        </div>
-      </div>
-
-      <!-- Invoice summary preview -->
-      <div class="flex flex-col gap-4">
-        @if (selectedInvoice; as inv) {
-          <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
-            <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
-              <i class="pi pi-receipt text-primary-400"></i> Invoice Summary
-            </h3>
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                   style="background: #6366f1; color: white">
-                {{ inv.enrollment.student.fullName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() }}
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-txt-main">{{ inv.enrollment.student.fullName }}</p>
-                <p class="text-xs text-txt-muted">{{ inv.enrollment.course.name }}
-                  <span class="font-mono ml-1" style="color: var(--primary-400)">({{ inv.enrollment.course.code }})</span>
-                </p>
-              </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-txt-muted">Fee Type *</label>
+              <p-select [(ngModel)]="adminForm.feeType" [options]="feeTypeOptions" class="w-full text-sm" />
             </div>
-            <div class="space-y-2 pt-3 border-t border-border-muted">
-              <div class="flex justify-between text-sm">
-                <span class="text-txt-muted">Total Fee</span>
-                <span class="text-txt-main font-semibold">KES {{ inv.totalAmount | number }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-txt-muted">Already Paid</span>
-                <span class="text-green-400 font-semibold">KES {{ (inv.totalAmount - inv.balance) | number }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-txt-muted">Outstanding Balance</span>
-                <span class="text-red-400 font-semibold">KES {{ inv.balance | number }}</span>
-              </div>
-              @if (form.amount > 0) {
-                <div class="flex justify-between text-sm pt-2 border-t border-border-muted">
-                  <span class="text-txt-muted">Balance After Payment</span>
-                  <span class="font-semibold"
-                        [class.text-green-400]="inv.balance - form.amount <= 0"
-                        [class.text-yellow-400]="inv.balance - form.amount > 0">
-                    KES {{ (inv.balance - form.amount) | number }}
-                  </span>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-txt-muted">Method *</label>
+              <p-select [(ngModel)]="adminForm.method" [options]="methodOptions" class="w-full text-sm" />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Amount</label>
+            <input pInputText type="number" min="0" [(ngModel)]="adminForm.amount" [placeholder]="'Default: KES ' + suggestedAmount()" class="w-full text-sm" />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Transaction Reference</label>
+            <input pInputText [(ngModel)]="adminForm.transactionRef" placeholder="M-Pesa receipt, bank ref, or cash receipt" class="w-full text-sm" />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Paid At</label>
+            <input pInputText type="date" [(ngModel)]="adminForm.paidAt" class="w-full text-sm" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          @if (adminForm.feeType === 'MEMBERSHIP_FEE') {
+            <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+              <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+                <i class="pi pi-calendar text-primary-400"></i> Membership Period
+              </h3>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-txt-muted">Period Start</label>
+                  <input pInputText type="date" [(ngModel)]="adminForm.periodStart" class="w-full text-sm" />
                 </div>
-              }
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-txt-muted">Period End</label>
+                  <input pInputText type="date" [(ngModel)]="adminForm.periodEnd" class="w-full text-sm" />
+                </div>
+              </div>
             </div>
+          }
+
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+            <h3 class="text-sm font-semibold text-txt-main tracking-tight">Current Fee Defaults</h3>
+            @if (fees.current(); as fee) {
+              <div class="flex justify-between text-xs">
+                <span class="text-txt-muted">Joining fee</span>
+                <span class="text-txt-main font-medium">{{ fee.currency }} {{ +fee.joiningFee | number }}</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-txt-muted">Membership fee</span>
+                <span class="text-txt-main font-medium">{{ fee.currency }} {{ +fee.membershipFee | number }}</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-txt-muted">Cycle</span>
+                <span class="text-txt-main font-medium">{{ fee.membershipFeeCycle }}</span>
+              </div>
+            } @else {
+              <p class="text-xs text-txt-muted">No fee settings loaded.</p>
+            }
           </div>
-        } @else {
-          <div class="border border-border-muted bg-panel-bg rounded-xl p-8 backdrop-blur-xl flex flex-col items-center justify-center text-center gap-2">
-            <i class="pi pi-receipt text-3xl text-txt-ghost"></i>
-            <p class="text-sm text-txt-muted">Select an invoice to see a summary</p>
-          </div>
-        }
+        </div>
       </div>
+    } @else {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+          <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+            <i class="pi pi-mobile text-primary-400"></i> M-Pesa Payment
+          </h3>
 
-    </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Fee Type *</label>
+            <p-select [(ngModel)]="memberForm.feeType" [options]="feeTypeOptions" class="w-full text-sm" />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Phone Number</label>
+            <input pInputText [(ngModel)]="memberForm.phoneNumber" placeholder="254712345678" class="w-full text-sm" />
+          </div>
+        </div>
+
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+          <h3 class="text-sm font-semibold text-txt-main tracking-tight">Amount</h3>
+          @if (fees.current(); as fee) {
+            <p class="text-3xl font-bold text-txt-main">
+              {{ fee.currency }}
+              @if (memberForm.feeType === 'JOINING_FEE') {
+                {{ +fee.joiningFee | number }}
+              } @else {
+                {{ +fee.membershipFee | number }}
+              }
+            </p>
+            <p class="text-xs text-txt-muted">{{ feeLabel(memberForm.feeType) }}</p>
+          } @else {
+            <p class="text-xs text-txt-muted">Loading fee settings...</p>
+          }
+        </div>
+      </div>
+    }
   </ng-container>
-
 </app-dashboard-shell>

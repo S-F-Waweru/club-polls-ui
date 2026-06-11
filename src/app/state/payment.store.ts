@@ -1,273 +1,220 @@
 import { inject } from '@angular/core';
-import { signalStore, withState, withMethods, patchState, withHooks } from '@ngrx/signals';
-import { withEntities, setAllEntities, addEntity, updateEntity, removeEntity } from '@ngrx/signals/entities';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { pipe, switchMap, tap, debounceTime, distinctUntilChanged, map, catchError, EMPTY } from 'rxjs';
+import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
+import { addEntity, setAllEntities, updateEntity, withEntities } from '@ngrx/signals/entities';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { catchError, EMPTY, pipe, switchMap, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export type PaymentMethod = 'MPESA' | 'BANK' | 'CASH';
-export type PaymentStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
-
-export interface PaymentInvoice {
-  id: string;
-  totalAmount: number;
-  balance: number;
-  status: 'PAID' | 'PARTIAL' | 'UNPAID';
-  issued_at: string;
-  enrollment: {
-    student: {
-      id: string;
-      studentId: string;
-      fullName: string;
-    };
-    course: {
-      id: string;
-      name: string;
-      code: string;
-    };
-  };
-}
-
-export interface RecordedBy {
-  id: string;
-  name: string;
-  role: 'admin' | 'bursar';
-}
-
-export interface Payment {
-  id: string;
-  amount: number;
-  method: PaymentMethod;
-  transactionRef: string;
-  status: PaymentStatus;
-  paid_at: string;
-  synced_at: string | null;
-  invoice: PaymentInvoice;
-  recordedBy: RecordedBy | null;
-}
-
-export interface CreatePaymentDto {
-  invoiceId: string;
-  amount: number;
-  method: PaymentMethod;
-  transactionRef: string;
-  paid_at?: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  lastPage: number;
-}
+import {
+  CreatePaymentDto,
+  MemberMpesaPaymentDto,
+  PaginatedResponse,
+  Payment,
+} from '../models/club.models';
 
 export interface PaymentsState {
   page: number;
   limit: number;
   totalRecords: number;
+  selectedPayment: Payment | null;
   isLoading: boolean;
   error: string | null;
+  successMessage: string | null;
 }
 
 const initialState: PaymentsState = {
   page: 1,
   limit: 10,
   totalRecords: 0,
+  selectedPayment: null,
   isLoading: false,
   error: null,
+  successMessage: null,
 };
 
 export const PaymentsStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
   withEntities<Payment>(),
+  withMethods((store, http = inject(HttpClient)) => ({
+    setPage: (page: number) => patchState(store, { page }),
 
-  withMethods((store, http = inject(HttpClient)) => {
-    const loadPaginated = rxMethod<{ page: number; limit: number }>(
+    setLimit: (limit: number) => patchState(store, { limit, page: 1 }),
+
+    loadPayments: rxMethod<void>(
       pipe(
-        debounceTime(300),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
-        tap(() => patchState(store, { isLoading: true, error: null })),
-        switchMap(({ page, limit }) => {
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap(() => {
           const params = new HttpParams()
-            .set('page', page.toString())
-            .set('limit', limit.toString());
-          return http
-            .get<PaginatedResponse<Payment>>(`${environment.apiUrl}payments/paginated`, { params })
-            .pipe(
-              tap({
-                next: (res) =>
-                  patchState(store, setAllEntities(res.data), {
-                    totalRecords: res.total,
-                    isLoading: false,
-                  }),
-                error: (err) =>
-                  patchState(store, {
-                    error: err.error?.message || 'Failed to load payments.',
-                    isLoading: false,
-                  }),
-              }),
-            );
+            .set('page', store.page().toString())
+            .set('limit', store.limit().toString());
+
+          return http.get<PaginatedResponse<Payment>>(`${environment.apiUrl}payments/paginated`, { params }).pipe(
+            tap({
+              next: (response) =>
+                patchState(store, setAllEntities(response.data), {
+                  totalRecords: response.total,
+                  page: response.page,
+                  isLoading: false,
+                }),
+              error: (err) =>
+                patchState(store, {
+                  error: err.error?.message || 'Failed to load payments.',
+                  isLoading: false,
+                }),
+            }),
+            catchError(() => EMPTY),
+          );
         }),
       ),
-    );
+    ),
 
-    return {
-      setPage: (page: number) => patchState(store, { page }),
-      setLimit: (limit: number) => patchState(store, { limit, page: 1 }),
-
-      createPayment: rxMethod<CreatePaymentDto>(
-        pipe(
-          tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((dto) =>
-            http.post<Payment>(`${environment.apiUrl}payments`, dto).pipe(
-              tap((p) =>
-                patchState(store, addEntity(p), {
-                  totalRecords: store.totalRecords() + 1,
+    loadMyPayments: rxMethod<void>(
+      pipe(
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap(() =>
+          http.get<Payment[]>(`${environment.apiUrl}payments/me`).pipe(
+            tap({
+              next: (payments) =>
+                patchState(store, setAllEntities(payments), {
+                  totalRecords: payments.length,
                   isLoading: false,
                 }),
-              ),
-              catchError((err) => {
+              error: (err) =>
                 patchState(store, {
-                  error: Array.isArray(err.error?.message)
-                    ? err.error.message.join(', ')
-                    : err.error?.message || 'Failed to record payment.',
+                  error: err.error?.message || 'Failed to load your payments.',
                   isLoading: false,
-                });
-                return EMPTY;
-              }),
-            ),
-          ),
-        ),
-      ),
-
-      loadPaymentById: rxMethod<string>(
-        pipe(
-          tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((id) =>
-            http.get<Payment>(`${environment.apiUrl}payments/${id}`).pipe(
-              tap({
-                next: (p) =>
-                  patchState(store, updateEntity({ id: p.id, changes: p }), { isLoading: false }),
-                error: (err) =>
-                  patchState(store, {
-                    error: err.error?.message || 'Failed to load payment.',
-                    isLoading: false,
-                  }),
-              }),
-            ),
-          ),
-        ),
-      ),
-
-      deletePayment: rxMethod<string>(
-        pipe(
-          tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((id) =>
-            http.delete(`${environment.apiUrl}payments/${id}`).pipe(
-              map(() => id),
-              tap({
-                next: (id) =>
-                  patchState(store, removeEntity(id), {
-                    totalRecords: store.totalRecords() - 1,
-                    isLoading: false,
-                  }),
-                error: (err) =>
-                  patchState(store, {
-                    error: err.error?.message || 'Deletion failed.',
-                    isLoading: false,
-                  }),
-              }),
-            ),
-          ),
-        ),
-      ),
-
-      verifyPayment: rxMethod<string>(
-        pipe(
-          tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((id) =>
-            http.patch<Payment>(`${environment.apiUrl}payments/${id}/verify`, {}).pipe(
-              tap({
-                next: (p) =>
-                  patchState(store, updateEntity({ id: p.id, changes: p }), { isLoading: false }),
-                error: (err) =>
-                  patchState(store, {
-                    error: err.error?.message || 'Verification failed.',
-                    isLoading: false,
-                  }),
-              }),
-            ),
-          ),
-        ),
-      ),
-
-      rejectPayment: rxMethod<string>(
-        pipe(
-          tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((id) =>
-            http.patch<Payment>(`${environment.apiUrl}payments/${id}/reject`, {}).pipe(
-              tap({
-                next: (p) =>
-                  patchState(store, updateEntity({ id: p.id, changes: p }), { isLoading: false }),
-                error: (err) =>
-                  patchState(store, {
-                    error: err.error?.message || 'Rejection failed.',
-                    isLoading: false,
-                  }),
-              }),
-            ),
-          ),
-        ),
-      ),
-
-      downloadReceiptPdf: rxMethod<string>(
-        pipe(
-          tap(() => patchState(store, { isLoading: true, error: null })),
-          switchMap((id) =>
-            http
-              .get(`${environment.apiUrl}payments/${id}/receipt/pdf`, {
-                responseType: 'blob',
-              })
-              .pipe(
-                tap({
-                  next: (blob) => {
-                    openPdfBlob(blob, `payment-receipt-${id}.pdf`);
-                    patchState(store, { isLoading: false });
-                  },
-                  error: (err) =>
-                    patchState(store, {
-                      error: err.error?.message || 'Failed to download receipt.',
-                      isLoading: false,
-                    }),
                 }),
-              ),
+            }),
+            catchError(() => EMPTY),
           ),
         ),
       ),
+    ),
 
-      _runWatcher: loadPaginated,
-    };
-  }),
+    createPayment: rxMethod<CreatePaymentDto>(
+      pipe(
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap((dto) =>
+          http.post<Payment>(`${environment.apiUrl}payments`, dto).pipe(
+            tap((payment) =>
+              patchState(store, addEntity(payment), {
+                selectedPayment: payment,
+                totalRecords: store.totalRecords() + 1,
+                isLoading: false,
+                successMessage: 'Payment recorded.',
+              }),
+            ),
+            catchError((err) => {
+              patchState(store, {
+                error: formatApiError(err, 'Failed to record payment.'),
+                isLoading: false,
+              });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
 
-  withHooks({
-    onInit(store) {
-      store._runWatcher(() => ({ page: store.page(), limit: store.limit() }));
-    },
-  }),
+    requestMyMpesaPayment: rxMethod<MemberMpesaPaymentDto>(
+      pipe(
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap((dto) =>
+          http.post<Payment>(`${environment.apiUrl}payments/me/mpesa`, dto).pipe(
+            tap((payment) =>
+              patchState(store, addEntity(payment), {
+                selectedPayment: payment,
+                totalRecords: store.totalRecords() + 1,
+                isLoading: false,
+                successMessage: 'M-Pesa payment request sent.',
+              }),
+            ),
+            catchError((err) => {
+              patchState(store, {
+                error: formatApiError(err, 'Failed to start M-Pesa payment.'),
+                isLoading: false,
+              });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
+
+    loadPaymentById: rxMethod<string>(
+      pipe(
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap((id) =>
+          http.get<Payment>(`${environment.apiUrl}payments/${id}`).pipe(
+            tap({
+              next: (payment) =>
+                patchState(store, updateEntity({ id: payment.id, changes: payment }), {
+                  selectedPayment: payment,
+                  isLoading: false,
+                }),
+              error: (err) =>
+                patchState(store, {
+                  error: err.error?.message || 'Failed to load payment.',
+                  isLoading: false,
+                }),
+            }),
+            catchError(() => EMPTY),
+          ),
+        ),
+      ),
+    ),
+
+    verifyPayment: rxMethod<string>(
+      pipe(
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap((id) =>
+          http.patch<Payment>(`${environment.apiUrl}payments/${id}/verify`, {}).pipe(
+            tap({
+              next: (payment) =>
+                patchState(store, updateEntity({ id: payment.id, changes: payment }), {
+                  selectedPayment: payment,
+                  isLoading: false,
+                  successMessage: 'Payment verified.',
+                }),
+              error: (err) =>
+                patchState(store, {
+                  error: err.error?.message || 'Verification failed.',
+                  isLoading: false,
+                }),
+            }),
+            catchError(() => EMPTY),
+          ),
+        ),
+      ),
+    ),
+
+    rejectPayment: rxMethod<string>(
+      pipe(
+        tap(() => patchState(store, { isLoading: true, error: null, successMessage: null })),
+        switchMap((id) =>
+          http.patch<Payment>(`${environment.apiUrl}payments/${id}/reject`, {}).pipe(
+            tap({
+              next: (payment) =>
+                patchState(store, updateEntity({ id: payment.id, changes: payment }), {
+                  selectedPayment: payment,
+                  isLoading: false,
+                  successMessage: 'Payment rejected.',
+                }),
+              error: (err) =>
+                patchState(store, {
+                  error: err.error?.message || 'Rejection failed.',
+                  isLoading: false,
+                }),
+            }),
+            catchError(() => EMPTY),
+          ),
+        ),
+      ),
+    ),
+  })),
 );
 
-function openPdfBlob(blob: Blob, filename: string) {
-  const url = window.URL.createObjectURL(blob);
-  const opened = window.open(url, '_blank');
-
-  if (!opened) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-  }
-
-  window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+function formatApiError(err: any, fallback: string) {
+  return Array.isArray(err.error?.message) ? err.error.message.join(', ') : err.error?.message || fallback;
 }

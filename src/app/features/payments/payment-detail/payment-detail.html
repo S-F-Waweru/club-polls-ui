@@ -1,5 +1,4 @@
 <app-dashboard-shell>
-
   <div header class="w-full flex justify-between items-center flex-wrap gap-4">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
@@ -9,7 +8,7 @@
       </div>
       <div>
         <h1 class="text-lg font-semibold tracking-tight text-txt-main">Payment Details</h1>
-        <p class="text-xs text-txt-muted mt-0.5">Transaction record</p>
+        <p class="text-xs text-txt-muted mt-0.5">{{ payment()?.member?.memberId || 'Club fee payment' }}</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
@@ -27,150 +26,120 @@
     </div>
   }
 
-  <ng-container main-content>
-    @if (payment(); as p) {
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  @if (store.successMessage()) {
+    <div class="border border-green-500/30 bg-green-500/10 rounded-lg p-3 text-xs text-green-400">
+      <i class="pi pi-check-circle mr-2"></i>{{ store.successMessage() }}
+    </div>
+  }
 
-        <!-- Left: Payment summary -->
+  <ng-container main-content>
+    @if (payment(); as payment) {
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="lg:col-span-1">
-          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl flex flex-col items-center text-center h-full">
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col items-center text-center h-full">
             <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3"
                  style="background-color: color-mix(in srgb, var(--primary-500) 15%, transparent);">
-              <i [class]="methodIcon(p.method) + ' text-2xl'" [style.color]="methodColor(p.method)"></i>
+              <i [class]="methodIcon(payment.method) + ' text-2xl'" [style.color]="methodColor(payment.method)"></i>
             </div>
-            <p class="text-xs font-mono text-txt-muted mb-1">{{ p.transactionRef }}</p>
-            <h2 class="text-2xl font-bold text-txt-main mt-1">KES {{ p.amount | number }}</h2>
+            <p class="text-xs font-mono text-txt-muted mb-1">{{ payment.transactionRef || payment.darajaTransaction?.checkoutRequestId || payment.id }}</p>
+            <h2 class="text-2xl font-bold text-txt-main mt-1">KES {{ +payment.amount | number }}</h2>
             <div class="flex items-center gap-2 mt-2 flex-wrap justify-center">
-              <p-tag [value]="p.status" [severity]="statusSeverity(p.status)" />
+              <p-tag [value]="payment.status" [severity]="statusSeverity(payment.status)" />
               <span class="text-xs font-semibold px-2 py-0.5 rounded"
-                    [style.color]="methodColor(p.method)"
+                    [style.color]="methodColor(payment.method)"
                     style="background-color: color-mix(in srgb, currentColor 10%, transparent)">
-                {{ p.method }}
+                {{ payment.method }}
               </span>
             </div>
 
-            <!-- Verify/Reject inline if PENDING -->
-            @if (p.status === 'PENDING') {
-              <div class="w-full mt-4 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
-                <p class="text-xs text-yellow-400 mb-3 flex items-center gap-1 justify-center">
-                  <i class="pi pi-clock"></i> Awaiting verification
-                </p>
-                <div class="flex gap-2">
-                  <button (click)="confirmVerify()"
-                          class="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-green-500/40 text-green-400 hover:bg-green-500/10 transition">
-                    <i class="pi pi-check mr-1"></i> Verify
-                  </button>
-                  <button (click)="confirmReject()"
-                          class="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-red-500/40 text-red-400 hover:bg-red-500/10 transition">
-                    <i class="pi pi-times mr-1"></i> Reject
-                  </button>
-                </div>
-              </div>
-            }
-
-            @if (p.status === 'VERIFIED') {
-              <div class="w-full mt-4 p-3 rounded-lg border border-green-500/30 bg-green-500/5 flex items-center gap-2 justify-center">
-                <i class="pi pi-check-circle text-green-400"></i>
-                <p class="text-xs text-green-400 font-medium">Payment Verified</p>
-              </div>
-            }
-
-            @if (p.status === 'FAILED') {
-              <div class="w-full mt-4 p-3 rounded-lg border border-red-500/30 bg-red-500/5 flex items-center gap-2 justify-center">
-                <i class="pi pi-times-circle text-red-400"></i>
-                <p class="text-xs text-red-400 font-medium">Payment Rejected</p>
-              </div>
-            }
-
             <div class="w-full mt-6 pt-6 border-t border-border-muted space-y-2 text-left">
               <div class="flex justify-between text-sm">
-                <span class="text-txt-muted">Paid At</span>
-                <span class="text-txt-main font-medium">{{ p.paid_at | date:'mediumDate' }}</span>
+                <span class="text-txt-muted">Fee</span>
+                <span class="text-txt-main font-medium">{{ feeLabel(payment) }}</span>
               </div>
-              @if (p.synced_at) {
+              <div class="flex justify-between text-sm">
+                <span class="text-txt-muted">Paid At</span>
+                <span class="text-txt-main font-medium">{{ (payment.paidAt || payment.createdAt) | date:'mediumDate' }}</span>
+              </div>
+              @if (payment.verifiedAt) {
                 <div class="flex justify-between text-sm">
-                  <span class="text-txt-muted">Synced At</span>
-                  <span class="text-txt-main font-medium">{{ p.synced_at | date:'mediumDate' }}</span>
-                </div>
-              } @else {
-                <div class="flex justify-between text-sm">
-                  <span class="text-txt-muted">Synced At</span>
-                  <span class="text-yellow-400 text-xs">Not synced</span>
+                  <span class="text-txt-muted">Verified</span>
+                  <span class="text-green-400 font-medium">{{ payment.verifiedAt | date:'mediumDate' }}</span>
                 </div>
               }
               <div class="flex justify-between text-sm pt-2 border-t border-border-muted">
                 <span class="text-txt-muted">Recorded By</span>
-                <span class="text-txt-main font-medium">{{ p.recordedBy?.name || 'System' }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-txt-muted">Role</span>
-                <span class="text-txt-muted capitalize">{{ p.recordedBy?.role || 'auto' }}</span>
+                <span class="text-txt-main font-medium">{{ payment.recordedBy?.name || 'System' }}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Right: Invoice info -->
         <div class="lg:col-span-2 flex flex-col gap-4">
-          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
-            <h3 class="text-md font-semibold text-txt-main mb-4 flex items-center gap-2">
-              <i class="pi pi-receipt text-sm text-primary-400"></i> Invoice
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
+            <h3 class="text-sm font-semibold text-txt-main mb-4 flex items-center gap-2">
+              <i class="pi pi-user text-sm text-primary-400"></i> Member
             </h3>
 
-            <div class="flex items-center justify-between mb-4">
-              <p class="text-xs font-mono text-txt-muted">{{ p.invoice.id }}</p>
-              <div class="flex items-center gap-2">
-                <p-tag [value]="p.invoice.status" [severity]="invoiceSeverity(p.invoice.status)" />
-                <p-button icon="pi pi-arrow-right" size="small" [outlined]="true" severity="secondary"
-                          [routerLink]="['/invoices', p.invoice.id]" />
+            @if (payment.member) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="border border-border-muted rounded-lg p-3">
+                  <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Name</p>
+                  <p class="text-sm font-semibold text-txt-main">{{ payment.member.fullName }}</p>
+                </div>
+                <div class="border border-border-muted rounded-lg p-3">
+                  <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Member ID</p>
+                  <p class="text-sm font-mono" style="color: var(--primary-400)">{{ payment.member.memberId }}</p>
+                </div>
+                <div class="border border-border-muted rounded-lg p-3">
+                  <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Email</p>
+                  <p class="text-sm text-txt-main">{{ payment.member.email }}</p>
+                </div>
+                <div class="border border-border-muted rounded-lg p-3">
+                  <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Phone</p>
+                  <p class="text-sm text-txt-main">{{ payment.member.phone }}</p>
+                </div>
               </div>
-            </div>
+            }
+          </div>
 
-            <div class="mb-4">
-              <div class="flex justify-between text-xs text-txt-muted mb-1">
-                <span>Payment Progress</span>
-                <span>{{ progressPercent }}%</span>
-              </div>
-              <div class="w-full h-2 rounded-full bg-border-muted overflow-hidden">
-                <div class="h-full rounded-full transition-all" [style.width.%]="progressPercent"
-                     style="background: var(--primary-500)"></div>
-              </div>
-            </div>
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
+            <h3 class="text-sm font-semibold text-txt-main mb-4 flex items-center gap-2">
+              <i class="pi pi-calendar text-sm text-primary-400"></i> Period And M-Pesa
+            </h3>
 
-            <div class="grid grid-cols-3 gap-3 pt-4 border-t border-border-muted">
-              <div class="border border-border-muted rounded-lg p-3 text-center">
-                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Total Fee</p>
-                <p class="text-sm font-bold text-txt-main">KES {{ p.invoice.totalAmount | number }}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="border border-border-muted rounded-lg p-3">
+                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Period Start</p>
+                <p class="text-sm text-txt-main">{{ payment.periodStart ? (payment.periodStart | date:'mediumDate') : 'Not applicable' }}</p>
               </div>
-              <div class="border border-border-muted rounded-lg p-3 text-center">
-                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Paid</p>
-                <p class="text-sm font-bold text-green-400">KES {{ (p.invoice.totalAmount - p.invoice.balance) | number }}</p>
+              <div class="border border-border-muted rounded-lg p-3">
+                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Period End</p>
+                <p class="text-sm text-txt-main">{{ payment.periodEnd ? (payment.periodEnd | date:'mediumDate') : 'Not applicable' }}</p>
               </div>
-              <div class="border border-border-muted rounded-lg p-3 text-center">
-                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Balance</p>
-                <p class="text-sm font-bold text-red-400">KES {{ p.invoice.balance | number }}</p>
+              <div class="border border-border-muted rounded-lg p-3">
+                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">M-Pesa Receipt</p>
+                <p class="text-sm font-mono text-txt-main">{{ payment.darajaTransaction?.mpesaReceiptNumber || 'None' }}</p>
               </div>
-            </div>
-
-            <div class="flex justify-between text-sm mt-4 pt-4 border-t border-border-muted">
-              <span class="text-txt-muted">Issued At</span>
-              <span class="text-txt-main font-medium">{{ p.invoice.issued_at | date:'mediumDate' }}</span>
+              <div class="border border-border-muted rounded-lg p-3">
+                <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">M-Pesa Status</p>
+                <p class="text-sm text-txt-main">{{ payment.darajaTransaction?.status || 'Not linked' }}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     } @else {
       <div class="border border-border-muted bg-panel-bg rounded-xl p-12 text-center">
-        <i class="pi pi-exclamation-triangle text-4xl text-txt-muted mb-3 block"></i>
-        <p class="text-txt-muted">Payment not found.</p>
-        <p-button label="Back to List" icon="pi pi-arrow-left" size="small" severity="primary" routerLink="/payments" class="mt-4" />
+        <i class="pi pi-spin pi-spinner text-2xl text-txt-muted mb-3 block"></i>
+        <p class="text-sm text-txt-muted">Loading payment...</p>
       </div>
     }
   </ng-container>
 
   <ng-container side-panel>
     <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
-      <h3 class="text-sm font-semibold text-txt-main tracking-tight mb-3">Quick Actions</h3>
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight mb-3">Actions</h3>
       <div class="flex flex-col gap-2">
         @if (payment()?.status === 'PENDING') {
           <button (click)="confirmVerify()"
@@ -182,17 +151,13 @@
             <i class="pi pi-times-circle text-red-400"></i> Reject Payment
           </button>
         }
-        <button (click)="payment()?.id && store.downloadReceiptPdf(payment()!.id)"
+        <button routerLink="/payments"
                 class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
-          <i class="pi pi-print text-blue-400"></i> Print Receipt
-        </button>
-        <button class="w-full text-left px-3 py-2 rounded-lg border border-border-muted text-sm flex items-center gap-2 hover:bg-white/5 transition">
-          <i class="pi pi-envelope text-purple-400"></i> Send Receipt
+          <i class="pi pi-list text-blue-400"></i> Payment List
         </button>
       </div>
     </div>
   </ng-container>
 
   <p-confirmDialog />
-
 </app-dashboard-shell>

@@ -1,15 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { firstValueFrom, Observable, tap } from 'rxjs'; // 👈 Added firstValueFrom
+import { firstValueFrom, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthRole, AuthUser } from '../models/club.models';
 
-export interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'bursar';
-}
+export type { AuthUser };
 
 export interface LoginDto {
   email: string;
@@ -20,7 +16,7 @@ export interface RegisterDto {
   name: string;
   email: string;
   password: string;
-  role: 'admin' | 'bursar';
+  role: Exclude<AuthRole, 'member'>;
 }
 
 @Injectable({
@@ -31,31 +27,30 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly baseUrl = `${environment.apiUrl}auth`;
 
-  // 👇 ADD THIS METHOD for the App Initializer handshake
   async checkSessionOnStartup(): Promise<AuthUser | null> {
     try {
       return await firstValueFrom(this.getProfile());
     } catch {
-      return null; // Return null safely if cookie is missing/expired
+      return null;
     }
   }
 
-  login(dto: LoginDto): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/login`, dto);
+  login(dto: LoginDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/login`, dto);
   }
 
-  register(dto: RegisterDto): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/register`, dto);
+  register(dto: RegisterDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/register`, dto);
   }
 
   getProfile(): Observable<AuthUser> {
     return this.http.get<AuthUser>(`${this.baseUrl}/me`);
   }
 
-  logout(): Observable<void> {
+  logout(): Observable<{ message: string }> {
     return this.http
-      .post<void>(`${this.baseUrl}/logout`, {})
-      .pipe(tap(() => this.router.navigate(['/login'])));
+      .post<{ message: string }>(`${this.baseUrl}/logout`, {})
+      .pipe(tap(() => this.navigateToLogin()));
   }
 
   navigateToDashboard(): void {
@@ -65,15 +60,16 @@ export class AuthService {
   navigateToLogin(): void {
     this.router.navigate(['/login']);
   }
-  changePassword(dto: { currentPassword: string; newPassword: string }): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/change-password`, dto);
+
+  changePassword(dto: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/change-password`, dto);
   }
 
-  forgotPassword(email: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/forgot-password`, { email });
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/forgot-password`, { email });
   }
 
-  resetPassword(dto: { token: string; newPassword: string }): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/reset-password`, dto);
+  resetPassword(dto: { token: string; newPassword: string }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/reset-password`, dto);
   }
 }

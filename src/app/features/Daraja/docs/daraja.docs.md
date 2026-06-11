@@ -88,7 +88,7 @@ import { environment } from '../../../environments/environment';
 })
 export class DarajaService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/daraja`;
+  private apiUrl = `${environment.apiUrl}daraja`;
 
   /**
    * Triggers an automated STK Push PIN prompt request via the NestJS gateway.
@@ -317,7 +317,7 @@ import { DarajaTransaction } from './daraja.models';
                 <th class="p-3">Timestamp</th>
                 <th>Receipt ID</th>
                 <th>Interaction</th>
-                <th>Ref / Invoice</th>
+                <th>Account Ref</th>
                 <th>Source Address</th>
                 <th>Value</th>
                 <th class="p-3">Status</th>
@@ -426,7 +426,7 @@ import { DarajaDashboardComponent } from './daraja/daraja-dashboard.component';
         <!-- Render Payment Checkout Widget -->
         <lib-daraja-stk-checkout 
           [payableAmount]="orderTotal()" 
-          [accountReference]="'INV-2026-X88'"
+          [accountReference]="'M-000-001'"
           (paymentComplete)="handlePostSettlement($event)">
         </lib-daraja-stk-checkout>
       </div>
@@ -443,7 +443,7 @@ export class BillingManagementComponent {
 
   handlePostSettlement(transactionTrace: any) {
     console.log('Operational callback context updated:', transactionTrace);
-    // Execute post-payment actions here (e.g., download invoices, unlock routes)
+    // Execute post-payment actions here (e.g., confirm the member fee)
   }
 }
 

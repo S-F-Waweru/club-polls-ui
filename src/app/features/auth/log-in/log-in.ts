@@ -3,8 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthStore } from '../../../state/auth.store';
 import { Password } from 'primeng/password';
 import { InputText } from 'primeng/inputtext';
-import { Divider } from 'primeng/divider';
-import { Button, ButtonDirective } from 'primeng/button';
+import { Button } from 'primeng/button';
 import { AuthShellComponent } from '../../../core/components/auth-shell.component';
 
 @Component({

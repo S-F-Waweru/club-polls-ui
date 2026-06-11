@@ -11,7 +11,7 @@ import { DarajaTransaction, PaginatedTransactions } from '../daraja.models';
 export class DarajaService {
   private http = inject(HttpClient);
   // Points to your NestJS backend baseUrl configured in environment files
-  private apiUrl = `${environment.apiUrl}/daraja`;
+  private apiUrl = `${environment.apiUrl}daraja`;
 
   /**
    * Triggers an STK Push payment overlay on the user's phone.

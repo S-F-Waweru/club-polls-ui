@@ -1,232 +1,192 @@
-import { Component, inject, computed, OnInit, signal } from '@angular/core';
-import { DashboardShellComponent } from '../../../core/components/DashboardShellComponent';
+import { Component, OnInit, computed, inject } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
+import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { ChartModule } from 'primeng/chart';
-import { AnalyticsFilter, AnalyticsStore } from '../../../state/analytics.store';
-import { Select } from 'primeng/select';
-import { InputText } from 'primeng/inputtext';
-import { FormsModule } from '@angular/forms';
+import { DashboardShellComponent } from '../../../core/components/DashboardShellComponent';
+import { FEE_TYPE_LABELS, Payment } from '../../../models/club.models';
+import { AuthStore } from '../../../state/auth.store';
+import { ElectionsStore } from '../../../state/elections.store';
+import { FeeSettingsStore } from '../../../state/fee-settings.store';
+import { MembersStore } from '../../../state/members.store';
+import { PaymentsStore } from '../../../state/payment.store';
 
 @Component({
   selector: 'app-dasboard-component',
+  standalone: true,
   imports: [
     DashboardShellComponent,
     Button,
     TableModule,
-    CommonModule,
+    Tag,
     RouterLink,
     ChartModule,
-    Select,
-    InputText,
-    FormsModule,
+    DatePipe,
+    DecimalPipe,
   ],
   templateUrl: './dasboard-component.html',
   styleUrl: './dasboard-component.css',
 })
 export class DashboardComponent implements OnInit {
-  private store = inject(AnalyticsStore);
+  readonly auth = inject(AuthStore);
+  readonly members = inject(MembersStore);
+  readonly payments = inject(PaymentsStore);
+  readonly fees = inject(FeeSettingsStore);
+  readonly elections = inject(ElectionsStore);
 
-  filterMode = signal<'year' | 'range'>('year');
-  selectedYear = signal<string>(new Date().getFullYear().toString());
-  fromDate = signal<string>('');
-  toDate = signal<string>('');
-
-  yearOptions = ['2024', '2025', '2026'].map((y) => ({ label: y, value: y }));
-
-  applyFilter() {
-    let filter: AnalyticsFilter = {};
-    if (this.filterMode() === 'year') {
-      filter = { year: this.selectedYear() };
-    } else {
-      filter = { from: this.fromDate(), to: this.toDate() };
-    }
-    this.store.setFilter(filter);
-    this.store.loadDashboard(filter);
-    this.store.loadFinancial(filter);
-    this.store.loadInvoices(filter);
-  }
-
-  resetFilter() {
-    this.selectedYear.set(new Date().getFullYear().toString());
-    this.fromDate.set('');
-    this.toDate.set('');
-    this.store.setFilter({});
-    this.store.loadDashboard();
-    this.store.loadFinancial();
-    this.store.loadInvoices();
-  }
-
-  isLoading = this.store.isLoading;
-  dashboard = this.store.dashboard;
-  financial = this.store.financial;
+  isAdmin = this.auth.isAdmin;
+  currentUserName = computed(() => this.auth.currentUser()?.name ?? 'My account');
 
   ngOnInit() {
-    this.store.loadDashboard();
-    this.store.loadFinancial();
-    this.store.loadInvoices();
+    this.fees.loadCurrent();
+    this.elections.loadElections();
+    this.elections.loadOpenElections();
+    this.elections.loadHistory();
 
-
+    if (this.auth.isAdmin()) {
+      this.members.loadMembers();
+      this.payments.loadPayments();
+    } else {
+      this.members.loadMyProfile();
+      this.members.loadMyFinancialStatus();
+      this.payments.loadMyPayments();
+    }
   }
 
   metrics = computed(() => {
-    const d = this.dashboard();
-    const f = this.financial();
+    const allPayments = this.payments.entities();
+    const verified = allPayments.filter((payment) => payment.status === 'VERIFIED');
+    const collected = verified.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const pending = allPayments.filter((payment) => payment.status === 'PENDING').length;
+
+    if (!this.auth.isAdmin()) {
+      const financial = this.members.myFinancialStatus();
+      return [
+        {
+          label: 'Voting Status',
+          value: financial?.canVote ? 'Eligible' : 'Blocked',
+          sub: financial?.memberId ?? 'Member account',
+          icon: 'pi pi-check-square',
+          color: financial?.canVote ? 'var(--success)' : 'var(--danger)',
+        },
+        {
+          label: 'Joining Fee',
+          value: financial?.hasJoiningFee ? 'Paid' : 'Due',
+          sub: 'One-time fee',
+          icon: 'pi pi-wallet',
+          color: financial?.hasJoiningFee ? 'var(--success)' : 'var(--warning)',
+        },
+        {
+          label: 'Annual Fee',
+          value: financial?.hasCurrentMembershipFee ? 'Current' : 'Due',
+          sub: 'Membership fee',
+          icon: 'pi pi-calendar',
+          color: financial?.hasCurrentMembershipFee ? 'var(--success)' : 'var(--warning)',
+        },
+        {
+          label: 'Open Elections',
+          value: `${this.elections.openElections().length}`,
+          sub: 'Available voting windows',
+          icon: 'pi pi-bolt',
+          color: 'var(--info)',
+        },
+      ];
+    }
+
     return [
       {
-        label: 'Active Students',
-        value: d ? `${d.students.active}` : '—',
-        sub: d ? `${d.students.total} total` : '',
+        label: 'Members',
+        value: `${this.members.totalRecords()}`,
+        sub: `${this.members.entities().filter((member) => member.status === 'ACTIVE').length} active on page`,
         icon: 'pi pi-users',
         color: 'var(--p-primary-500)',
       },
       {
-        label: 'Revenue Collected',
-        value: d ? `KES ${d.finance.totalRevenue.toLocaleString()}` : '—',
-        sub: f ? `${f.summary.collectionRate}% collection rate` : '',
+        label: 'Collected',
+        value: `KES ${collected.toLocaleString()}`,
+        sub: 'Verified fees',
         icon: 'pi pi-wallet',
-        color: 'var(--p-green-500)',
-      },
-      {
-        label: 'Outstanding Balance',
-        value: d ? `KES ${d.finance.outstandingBalance.toLocaleString()}` : '—',
-        sub: d ? `${d.finance.unpaidInvoices} unpaid invoices` : '',
-        icon: 'pi pi-exclamation-circle',
-        color: 'var(--p-amber-500)',
+        color: 'var(--success)',
       },
       {
         label: 'Pending Payments',
-        value: d ? `${d.finance.pendingPayments}` : '—',
+        value: `${pending}`,
         sub: 'Awaiting verification',
         icon: 'pi pi-clock',
-        color: 'var(--p-red-500)',
+        color: 'var(--warning)',
       },
       {
-        label: 'Total Enrollments',
-        value: d ? `${d.enrollments.total}` : '—',
-        sub: d ? `${d.courses.active} active courses` : '',
-        icon: 'pi pi-book',
-        color: 'var(--p-purple-500)',
+        label: 'Open Elections',
+        value: `${this.elections.openElections().length}`,
+        sub: 'Voting windows',
+        icon: 'pi pi-check-square',
+        color: 'var(--info)',
+      },
+      {
+        label: 'Winners Stored',
+        value: `${this.elections.history().length}`,
+        sub: 'Leadership history',
+        icon: 'pi pi-history',
+        color: '#8b5cf6',
       },
     ];
   });
 
-  topDebtors = computed(() => this.store.invoices()?.topUnpaid ?? []);
-  methodBreakdown = computed(() => this.store.financial()?.methodBreakdown ?? []);
+  recentPayments = computed(() => this.payments.entities().slice(0, 5));
+  openElections = this.elections.openElections;
 
-  // ── Chart 1: Revenue Trend (Line) ──────────────────────────
-  revenueChartData = computed(() => {
-    const months = this.store.financial()?.revenueByMonth ?? [];
+  paymentStatusData = computed(() => {
+    const payments = this.payments.entities();
+    const statuses = ['VERIFIED', 'PENDING', 'FAILED'];
     return {
-      labels: months.map((m) => m.month),
+      labels: statuses,
       datasets: [
         {
-          label: 'Revenue (KES)',
-          data: months.map((m) => Number(m.revenue)),
-          fill: true,
-          tension: 0.4,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99,102,241,0.1)',
-          pointBackgroundColor: '#6366f1',
-          pointRadius: 4,
-        },
-      ],
-    };
-  });
-
-  revenueChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => ` KES ${Number(ctx.raw).toLocaleString()}`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        ticks: { color: '#94a3b8', font: { size: 10 } },
-        grid: { color: 'rgba(255,255,255,0.05)' },
-      },
-      y: {
-        ticks: {
-          color: '#94a3b8',
-          font: { size: 10 },
-          callback: (v: any) => `KES ${Number(v).toLocaleString()}`,
-        },
-        grid: { color: 'rgba(255,255,255,0.05)' },
-      },
-    },
-  };
-
-  // ── Chart 2: Invoice Status (Donut) ────────────────────────
-  invoiceDonutData = computed(() => {
-    const breakdown = this.store.financial()?.invoiceBreakdown ?? [];
-    const colorMap: Record<string, string> = {
-      PAID: '#22c55e',
-      PARTIAL: '#f59e0b',
-      UNPAID: '#ef4444',
-    };
-    return {
-      labels: breakdown.map((b) => b.status),
-      datasets: [
-        {
-          data: breakdown.map((b) => Number(b.count)),
-          backgroundColor: breakdown.map((b) => colorMap[b.status] ?? '#6366f1'),
+          data: statuses.map((status) => payments.filter((payment) => payment.status === status).length),
+          backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
           borderWidth: 0,
         },
       ],
     };
   });
 
-  invoiceDonutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '70%',
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { color: '#94a3b8', font: { size: 10 }, padding: 12 },
-      },
-    },
-  };
-
-  // ── Chart 3: Payment Methods (Bar) ─────────────────────────
-  methodBarData = computed(() => {
-    const methods = this.store.financial()?.methodBreakdown ?? [];
-    const colorMap: Record<string, string> = {
-      MPESA: '#22c55e',
-      BANK: '#3b82f6',
-      CASH: '#f59e0b',
-    };
+  feeTypeData = computed(() => {
+    const payments = this.payments.entities();
+    const feeTypes = ['JOINING_FEE', 'MEMBERSHIP_FEE'];
     return {
-      labels: methods.map((m) => m.method),
+      labels: ['Joining', 'Membership'],
       datasets: [
         {
-          label: 'Amount (KES)',
-          data: methods.map((m) => Number(m.total)),
-          backgroundColor: methods.map((m) => colorMap[m.method] ?? '#6366f1'),
+          label: 'Amount',
+          data: feeTypes.map((feeType) =>
+            payments
+              .filter((payment) => payment.feeType === feeType && payment.status === 'VERIFIED')
+              .reduce((sum, payment) => sum + Number(payment.amount), 0),
+          ),
+          backgroundColor: ['#3b82f6', '#22c55e'],
           borderRadius: 6,
         },
       ],
     };
   });
 
-  methodBarOptions = {
+  chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: { color: '#94a3b8', font: { size: 10 }, padding: 12 },
+      },
+    },
+  };
+
+  barOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => ` KES ${Number(ctx.raw).toLocaleString()}`,
-        },
-      },
     },
     scales: {
       x: {
@@ -234,28 +194,32 @@ export class DashboardComponent implements OnInit {
         grid: { display: false },
       },
       y: {
-        ticks: {
-          color: '#94a3b8',
-          font: { size: 10 },
-          callback: (v: any) => `KES ${Number(v).toLocaleString()}`,
-        },
-        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: '#94a3b8', font: { size: 10 } },
+        grid: { color: 'rgba(148, 163, 184, 0.14)' },
       },
     },
   };
 
-  methodIcon(method: string) {
-    return (
-      { MPESA: 'pi pi-mobile', BANK: 'pi pi-building-columns', CASH: 'pi pi-wallet' }[method] ??
-      'pi pi-credit-card'
-    );
+  paymentSeverity(status: string): 'success' | 'warn' | 'danger' | 'secondary' {
+    const map: Record<string, 'success' | 'warn' | 'danger' | 'secondary'> = {
+      VERIFIED: 'success',
+      PENDING: 'warn',
+      FAILED: 'danger',
+    };
+    return map[status] ?? 'secondary';
   }
 
-  methodColor(method: string) {
-    return { MPESA: '#22c55e', BANK: '#3b82f6', CASH: '#f59e0b' }[method] ?? 'var(--text-muted)';
+  electionSeverity(status: string): 'success' | 'warn' | 'danger' | 'info' | 'secondary' {
+    const map: Record<string, 'success' | 'warn' | 'danger' | 'info' | 'secondary'> = {
+      OPEN: 'success',
+      SCHEDULED: 'info',
+      CLOSED: 'warn',
+      TALLIED: 'secondary',
+    };
+    return map[status] ?? 'secondary';
   }
 
-  invoiceSeverity(status: string): 'success' | 'warn' | 'danger' | 'secondary' {
-    return ({ PAID: 'success', PARTIAL: 'warn', UNPAID: 'danger' } as any)[status] ?? 'secondary';
+  feeLabel(payment: Payment) {
+    return FEE_TYPE_LABELS[payment.feeType] ?? payment.feeType;
   }
 }

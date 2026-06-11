@@ -1,6 +1,6 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, RouterLinkActive } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { MenuItem, PrimeTemplate } from 'primeng/api';
 import { Menu } from 'primeng/menu';
 import { AuthStore } from '../../state/auth.store';
@@ -27,7 +27,6 @@ export interface NavGroup {
         display: block;
       }
 
-      /* ─── Sidebar ─── */
       .sidebar {
         width: 240px;
         min-width: 240px;
@@ -42,7 +41,6 @@ export interface NavGroup {
         min-width: 64px;
       }
 
-      /* Label / badge fade when collapsed */
       .sidebar.collapsed .nav-label,
       .sidebar.collapsed .nav-badge,
       .sidebar.collapsed .nav-group-label,
@@ -65,7 +63,6 @@ export interface NavGroup {
         white-space: nowrap;
       }
 
-      /* Nav item */
       .nav-item {
         display: flex;
         align-items: center;
@@ -73,7 +70,7 @@ export interface NavGroup {
         padding: 8px 10px;
         border-radius: var(--radius-sm);
         cursor: pointer;
-        color: rgba(255,255,255,0.75);
+        color: rgba(255, 255, 255, 0.75);
         font-size: 0.825rem;
         font-weight: 500;
         transition:
@@ -83,11 +80,11 @@ export interface NavGroup {
         position: relative;
       }
       .nav-item:hover {
-        background: rgba(255,255,255,0.12);
+        background: rgba(255, 255, 255, 0.12);
         color: #fff;
       }
       .nav-item.active {
-        background: rgba(255,255,255,0.2);
+        background: rgba(255, 255, 255, 0.2);
         color: #fff;
       }
       .nav-item .nav-icon {
@@ -97,7 +94,6 @@ export interface NavGroup {
         text-align: center;
       }
 
-      /* Active indicator bar */
       .nav-item.active::before {
         content: '';
         position: absolute;
@@ -109,7 +105,6 @@ export interface NavGroup {
         background: #fff;
       }
 
-      /* Tooltip for collapsed sidebar */
       .sidebar.collapsed .nav-item {
         justify-content: center;
         padding: 10px;
@@ -132,7 +127,6 @@ export interface NavGroup {
         pointer-events: none;
       }
 
-      /* Scrollbar — sidebar nav */
       .sidebar-nav::-webkit-scrollbar {
         width: 3px;
       }
@@ -140,11 +134,10 @@ export interface NavGroup {
         background: transparent;
       }
       .sidebar-nav::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.2);
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 99px;
       }
 
-      /* Main scroll area — no scrollbar */
       .main-scroll {
         overflow-y: auto;
         scrollbar-width: none;
@@ -153,7 +146,6 @@ export interface NavGroup {
         display: none;
       }
 
-      /* Grid overlay */
       .grid-overlay {
         background-image:
           linear-gradient(var(--grid-line) 1px, transparent 1px),
@@ -161,20 +153,17 @@ export interface NavGroup {
         background-size: 40px 40px;
       }
 
-      /* Nav group label on primary bg */
       .nav-group-label {
-        color: rgba(255,255,255,0.45) !important;
+        color: rgba(255, 255, 255, 0.45) !important;
       }
 
-      /* Logo border and footer border on primary bg */
       .sidebar-logo-border {
-        border-bottom: 1px solid rgba(255,255,255,0.15);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
       }
       .sidebar-footer-border {
-        border-top: 1px solid rgba(255,255,255,0.15);
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
       }
 
-      /* Mobile overlay */
       .mobile-overlay {
         display: none;
       }
@@ -217,19 +206,13 @@ export interface NavGroup {
       [style.background]="'var(--bg-app)'"
       [style.color]="'var(--text-primary)'"
     >
-      <!-- Grid Overlay -->
       <div class="absolute inset-0 pointer-events-none opacity-60 grid-overlay"></div>
 
-      <!-- Mobile Overlay -->
       @if (mobileOpen()) {
         <div class="mobile-overlay" (click)="mobileOpen.set(false)"></div>
       }
 
-      <!-- Root Layout: Sidebar + Main -->
       <div class="relative z-10 flex h-full">
-        <!-- ═══════════════════════════════════════
-             SIDEBAR
-        ═══════════════════════════════════════ -->
         <aside
           class="sidebar flex flex-col h-screen sticky top-0 flex-shrink-0"
           [class.collapsed]="collapsed()"
@@ -237,7 +220,6 @@ export interface NavGroup {
           [style.background]="'var(--primary-600)'"
           [style.boxShadow]="'var(--shadow-sm)'"
         >
-          <!-- Logo -->
           <div
             class="flex items-center gap-3 px-4 py-4 flex-shrink-0 sidebar-logo-border"
             [style.minHeight]="'61px'"
@@ -248,14 +230,13 @@ export interface NavGroup {
               [style.color]="'#fff'"
               [style.fontSize]="'1rem'"
             >
-              <i class="pi pi-bolt"></i>
+              <i class="pi pi-users"></i>
             </div>
             <span class="logo-text font-semibold text-sm tracking-tight" style="color:#fff">
-              Helapay
+              ClubPolls
             </span>
           </div>
 
-          <!-- Nav -->
           <nav class="sidebar-nav flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1">
             @for (group of navGroups(); track group.group) {
               <div class="mb-1">
@@ -286,24 +267,23 @@ export interface NavGroup {
             }
           </nav>
 
-          <!-- Footer -->
           <div class="px-2 py-3 flex flex-col gap-1 flex-shrink-0 sidebar-footer-border">
-            <!-- User avatar row -->
             <div class="nav-item cursor-pointer" (click)="menu.toggle($event)">
               <div
                 class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
                 [style.background]="'rgba(255,255,255,0.25)'"
                 [style.color]="'#fff'"
               >
-                JD
+                {{ userInitials() }}
               </div>
               <div class="nav-label flex flex-col leading-tight">
-                <span class="text-xs font-medium" style="color:#fff">John Doe</span>
-                <span class="text-[10px]" style="color:rgba(255,255,255,0.6)">Admin</span>
+                <span class="text-xs font-medium" style="color:#fff">{{ userName() }}</span>
+                <span class="text-[10px] capitalize" style="color:rgba(255,255,255,0.6)">
+                  {{ userRole() }}
+                </span>
               </div>
             </div>
 
-            <!-- The Dropdown Menu containing your actions -->
             <p-menu #menu [model]="userMenuItems" [popup]="true" appendTo="body">
               <ng-template pTemplate="item" let-item>
                 @if (item.routerLink) {
@@ -327,7 +307,6 @@ export interface NavGroup {
               </ng-template>
             </p-menu>
 
-            <!-- Collapse toggle -->
             <button
               (click)="collapsed.set(!collapsed())"
               class="nav-item w-full text-left hidden md:flex"
@@ -343,11 +322,7 @@ export interface NavGroup {
           </div>
         </aside>
 
-        <!-- ═══════════════════════════════════════
-             MAIN AREA
-        ═══════════════════════════════════════ -->
         <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-          <!-- ── HEADER ── -->
           <header
             class="sticky top-0 z-30 flex items-center justify-between px-6 py-3 gap-4 flex-shrink-0"
             [style.background]="'color-mix(in srgb, var(--bg-panel) 85%, transparent)'"
@@ -355,7 +330,6 @@ export interface NavGroup {
             [style.backdropFilter]="'blur(12px)'"
             [style.minHeight]="'61px'"
           >
-            <!-- Mobile hamburger -->
             <button
               class="md:hidden p-2 rounded-md"
               [style.color]="'var(--text-muted)'"
@@ -364,16 +338,13 @@ export interface NavGroup {
               <i class="pi pi-bars text-base"></i>
             </button>
 
-            <!-- Breadcrumb / page title slot -->
             <div class="flex-1 min-w-0">
               <ng-content select="[header]"></ng-content>
             </div>
 
-            <!-- Right actions slot -->
             <div class="flex items-center gap-2 flex-shrink-0">
               <ng-content select="[header-actions]"></ng-content>
 
-              <!-- Default notification bell -->
               <button
                 class="relative w-9 h-9 rounded-md flex items-center justify-center transition-colors"
                 [style.color]="'var(--text-muted)'"
@@ -383,11 +354,9 @@ export interface NavGroup {
                 <span
                   class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
                   [style.background]="'var(--danger)'"
-                >
-                </span>
+                ></span>
               </button>
 
-              <!-- Dark mode toggle -->
               <button
                 (click)="toggleDark()"
                 class="w-9 h-9 rounded-md flex items-center justify-center transition-colors"
@@ -399,29 +368,24 @@ export interface NavGroup {
             </div>
           </header>
 
-          <!-- ── SCROLLABLE CONTENT AREA ── -->
           <div class="main-scroll flex-1 flex flex-col min-h-0">
-            <!-- ── CONTENT GRID ── -->
-            <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-400 w-full mx-auto">
-              <!-- Left Column (9 cols) -->
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[100rem] w-full mx-auto">
               <main class="col-span-12 lg:col-span-9 flex flex-col gap-5 min-w-0">
                 <ng-content select="[main-content]"></ng-content>
                 <ng-content select="[bottom-main-content]"></ng-content>
               </main>
 
-              <!-- Right Side Panel Column (3 cols) -->
               <aside class="col-span-12 lg:col-span-3 flex flex-col gap-5 min-w-0">
                 <ng-content select="[side-panel]"></ng-content>
               </aside>
             </div>
 
-            <!-- ── FOOTER ── -->
             <footer
               class="px-6 py-3 flex items-center justify-between text-[11px] flex-shrink-0"
               [style.color]="'var(--text-ghost)'"
               [style.borderTop]="'1px solid var(--border-default)'"
             >
-              <span>Helapay &copy; {{ currentYear }}</span>
+              <span>ClubPolls &copy; {{ currentYear }}</span>
               <ng-content select="[footer]"></ng-content>
               <span>v1.0.0</span>
             </footer>
@@ -432,51 +396,66 @@ export interface NavGroup {
   `,
 })
 export class DashboardShellComponent {
+  private readonly authStore = inject(AuthStore);
+
   collapsed = signal(false);
   mobileOpen = signal(false);
   isDark = signal(false);
-
   currentYear = new Date().getFullYear();
 
-  navGroups = signal<NavGroup[]>([
-    {
-      group: 'Overview',
-      items: [
-        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/dashboard' },
-        { label: 'Finance', icon: 'pi pi-dollar', route: '/finances-overview' },
-        { label: 'Education', icon: 'pi pi-book', route: '/courses-overview' },
-      ],
-    },
-    {
-      group: 'Manage',
-      items: [
-        { label: 'Students', icon: 'pi pi-users', route: '/students' },
-        { label: 'Courses', icon: 'pi pi-book', route: '/courses' },
-        { label: 'Enrollments', icon: 'pi pi-file', route: '/enrollments' },
-        { label: 'Invoices', icon: 'pi pi-receipt', route: '/invoices' },
-        { label: 'Payments', icon: 'pi pi-money-bill', route: '/payments' },
-      ],
-    },
-    // {
-    //   group: 'System',
-    //   items: [
-    //     { label: 'Logs', icon: 'pi-list', route: '/logs' },
-    //     { label: 'Settings', icon: 'pi-cog', route: '/settings' },
-    //   ],
-    // },
-    {
-      group: 'Mpesa',
-      items: [
-        { label: 'M-Pesa', icon: 'pi pi-mobile', route: '/transactions' },
-      ],
-    },
-  ]);
+  navGroups = computed<NavGroup[]>(() => {
+    const isAdmin = this.authStore.isAdmin();
+    const groups: NavGroup[] = [
+      {
+        group: 'Overview',
+        items: [{ label: 'Dashboard', icon: 'pi-chart-pie', route: '/dashboard' }],
+      },
+      {
+        group: 'Voting',
+        items: [
+          { label: 'Elections', icon: 'pi-check-square', route: '/elections' },
+          { label: 'Leadership History', icon: 'pi-history', route: '/elections/history' },
+        ],
+      },
+      {
+        group: 'Finance',
+        items: [{ label: 'Payments', icon: 'pi-money-bill', route: '/payments' }],
+      },
+    ];
+
+    if (isAdmin) {
+      groups.splice(1, 0, {
+        group: 'Manage',
+        items: [
+          { label: 'Members', icon: 'pi-users', route: '/members' },
+          { label: 'Fee Settings', icon: 'pi-cog', route: '/fee-settings' },
+        ],
+      });
+      groups.push({
+        group: 'M-Pesa',
+        items: [{ label: 'Transactions', icon: 'pi-mobile', route: '/transactions' }],
+      });
+    }
+
+    return groups;
+  });
+
+  userName = computed(() => this.authStore.currentUser()?.name ?? 'Club User');
+  userRole = computed(() => this.authStore.currentUser()?.role ?? 'member');
+  userInitials = computed(() =>
+    this.userName()
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+  );
 
   userMenuItems: MenuItem[] = [
     {
-      label: 'View Profile',
-      icon: 'pi pi-user',
-      routerLink: '/profile',
+      label: 'Dashboard',
+      icon: 'pi pi-chart-pie',
+      routerLink: '/dashboard',
     },
     {
       separator: true,
@@ -484,21 +463,12 @@ export class DashboardShellComponent {
     {
       label: 'Logout',
       icon: 'pi pi-sign-out',
-      command: () => {
-        this.handleLogout();
-      },
+      command: () => this.authStore.logout(),
     },
   ];
 
-  authStore = inject(AuthStore);
-
-  handleLogout() {
-    console.log('Logging user out...');
-    this.authStore.logout();
-  }
-
   toggleDark() {
-    this.isDark.update((v) => !v);
+    this.isDark.update((value) => !value);
     document.documentElement.classList.toggle('dark', this.isDark());
   }
 }

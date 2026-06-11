@@ -1,7 +1,7 @@
 <app-auth-shell
-  title="School Portal"
-  subtitle="Sign in to your account"
-  iconClass="pi pi-book">
+  title="Club Members Portal"
+  subtitle="Sign in to manage fees, members and votes"
+  iconClass="pi pi-users">
 
   <!-- Error banner drops automatically into the shell's slot -->
   @if (auth.error()) {
@@ -24,7 +24,7 @@
         pInputText
         type="email"
         formControlName="email"
-        placeholder="admin@school.com"
+        placeholder="admin@club.com"
         class="w-full"
       />
       @if (isInvalid('email')) {
