@@ -1,0 +1,113 @@
+<app-dashboard-shell>
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-user-plus text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">{{ isEdit ? 'Edit Member' : 'Add Member' }}</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ isEdit ? 'Update member profile and account details' : 'Create a member profile and login account' }}</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <p-button label="Cancel" icon="pi pi-times" size="small" [outlined]="true" severity="secondary" routerLink="/members" />
+      <p-button
+        [label]="isEdit ? 'Save Changes' : 'Add Member'"
+        icon="pi pi-check"
+        size="small"
+        severity="primary"
+        [loading]="store.isLoading()"
+        (onClick)="submit()" />
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-400">
+      <i class="pi pi-exclamation-circle mr-2"></i>{{ store.error() }}
+    </div>
+  }
+
+  <ng-container main-content>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+          <i class="pi pi-user text-primary-400"></i> Profile
+        </h3>
+
+        @if (isEdit && store.selectedMember(); as member) {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Member ID</label>
+            <input pInputText [value]="member.memberId" class="w-full text-sm opacity-70 font-mono" readonly />
+          </div>
+        }
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Full Name *</label>
+          <input pInputText [(ngModel)]="form.fullName" placeholder="Grace Wanjiku" class="w-full text-sm" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Phone *</label>
+          <input pInputText [(ngModel)]="form.phone" placeholder="254712345678" class="w-full text-sm" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Profile Photo URL</label>
+          <input pInputText [(ngModel)]="form.profilePhotoUrl" placeholder="https://example.com/photo.jpg" class="w-full text-sm" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Joined At</label>
+            <input pInputText type="date" [(ngModel)]="form.joinedAt" class="w-full text-sm" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Status</label>
+            <p-select [(ngModel)]="form.status" [options]="statusOptions" class="w-full text-sm" />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+          <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+            <i class="pi pi-lock text-primary-400"></i> Login Account
+          </h3>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Email *</label>
+            <input pInputText type="email" [(ngModel)]="form.email" placeholder="grace@example.com" class="w-full text-sm" />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">{{ isEdit ? 'New Password' : 'Password *' }}</label>
+            <p-password
+              [(ngModel)]="form.password"
+              [feedback]="false"
+              [toggleMask]="true"
+              [fluid]="true"
+              inputStyleClass="w-full"
+              placeholder="StrongPassword123" />
+          </div>
+        </div>
+
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg border flex items-center justify-center"
+                 style="background: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                        border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);
+                        color: var(--primary-400);">
+              <i class="pi pi-id-card"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-txt-main">Generated Member ID</p>
+              <p class="text-xs text-txt-muted mt-1">The backend assigns the public member ID after creation.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</app-dashboard-shell>

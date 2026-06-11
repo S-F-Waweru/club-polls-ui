@@ -1,0 +1,121 @@
+<app-dashboard-shell>
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-cog text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Fee Settings</h1>
+        <p class="text-xs text-txt-muted mt-0.5">Joining fee and recurring membership fee</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <p-button
+        label="Save Fees"
+        icon="pi pi-check"
+        size="small"
+        severity="primary"
+        [loading]="store.isLoading()"
+        (onClick)="submit()" />
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-400">
+      <i class="pi pi-exclamation-circle mr-2"></i>{{ store.error() }}
+    </div>
+  }
+
+  @if (store.saved()) {
+    <div class="border border-green-500/30 bg-green-500/10 rounded-lg p-3 text-xs text-green-400">
+      <i class="pi pi-check-circle mr-2"></i>Fee settings saved.
+    </div>
+  }
+
+  <ng-container main-content>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+          <i class="pi pi-wallet text-primary-400"></i> Amounts
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Joining Fee *</label>
+            <input pInputText type="number" min="0" [(ngModel)]="form.joiningFee" class="w-full text-sm" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Membership Fee *</label>
+            <input pInputText type="number" min="0" [(ngModel)]="form.membershipFee" class="w-full text-sm" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Cycle</label>
+            <p-select [(ngModel)]="form.membershipFeeCycle" [options]="cycleOptions" class="w-full text-sm" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-txt-muted">Currency</label>
+            <input pInputText [(ngModel)]="form.currency" class="w-full text-sm uppercase" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Notes</label>
+          <textarea
+            [(ngModel)]="form.notes"
+            rows="4"
+            class="w-full text-sm rounded-md px-3 py-2 outline-none"
+            style="background: var(--bg-panel); border: 1px solid var(--border-default); color: var(--text-primary); resize: vertical;"></textarea>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+            <p class="text-[10px] text-txt-muted uppercase font-medium mb-1">Joining Fee</p>
+            <p class="text-2xl font-bold text-txt-main">{{ form.currency }} {{ form.joiningFee | number }}</p>
+          </div>
+          <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+            <p class="text-[10px] text-txt-muted uppercase font-medium mb-1">Membership Fee</p>
+            <p class="text-2xl font-bold text-txt-main">{{ form.currency }} {{ form.membershipFee | number }}</p>
+            <p class="text-[10px] text-txt-muted mt-1">{{ form.membershipFeeCycle }}</p>
+          </div>
+        </div>
+
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+          <h3 class="text-sm font-semibold text-txt-main tracking-tight">Current Record</h3>
+          @if (store.current(); as current) {
+            <div class="flex justify-between text-xs">
+              <span class="text-txt-muted">Status</span>
+              <span class="text-green-400">{{ current.isActive ? 'Active' : 'Inactive' }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-txt-muted">Last updated</span>
+              <span class="text-txt-main">{{ current.updatedAt | date:'medium' }}</span>
+            </div>
+          } @else {
+            <p class="text-xs text-txt-muted">No active fee record loaded.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container side-panel>
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Payment Types</h3>
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-txt-muted">Joining</span>
+        <span class="text-txt-main font-medium">One time</span>
+      </div>
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-txt-muted">Membership</span>
+        <span class="text-txt-main font-medium">{{ form.membershipFeeCycle }}</span>
+      </div>
+    </div>
+  </ng-container>
+</app-dashboard-shell>

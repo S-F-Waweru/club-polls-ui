@@ -1,0 +1,474 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { MenuItem, PrimeTemplate } from 'primeng/api';
+import { Menu } from 'primeng/menu';
+import { AuthStore } from '../../state/auth.store';
+
+export interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+  badge?: number;
+}
+
+export interface NavGroup {
+  group: string;
+  items: NavItem[];
+}
+
+@Component({
+  selector: 'app-dashboard-shell',
+  standalone: true,
+  imports: [CommonModule, RouterModule, Menu, PrimeTemplate],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+
+      .sidebar {
+        width: 240px;
+        min-width: 240px;
+        transition:
+          width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+          min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: width;
+        overflow: hidden;
+      }
+      .sidebar.collapsed {
+        width: 64px;
+        min-width: 64px;
+      }
+
+      .sidebar.collapsed .nav-label,
+      .sidebar.collapsed .nav-badge,
+      .sidebar.collapsed .nav-group-label,
+      .sidebar.collapsed .logo-text,
+      .sidebar.collapsed .sidebar-footer-text {
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        overflow: hidden;
+      }
+
+      .nav-label,
+      .nav-badge,
+      .nav-group-label,
+      .logo-text,
+      .sidebar-footer-text {
+        transition:
+          opacity 0.2s ease,
+          width 0.25s ease;
+        white-space: nowrap;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.825rem;
+        font-weight: 500;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        text-decoration: none;
+        position: relative;
+      }
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+      }
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+      .nav-item .nav-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+
+      .nav-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 20%;
+        height: 60%;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        background: #fff;
+      }
+
+      .sidebar.collapsed .nav-item {
+        justify-content: center;
+        padding: 10px;
+      }
+      .sidebar.collapsed .nav-item:hover::after {
+        content: attr(data-label);
+        position: absolute;
+        left: calc(100% + 10px);
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-default);
+        color: var(--text-primary);
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: var(--radius-sm);
+        white-space: nowrap;
+        box-shadow: var(--shadow-lg);
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      .sidebar-nav::-webkit-scrollbar {
+        width: 3px;
+      }
+      .sidebar-nav::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .sidebar-nav::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 99px;
+      }
+
+      .main-scroll {
+        overflow-y: auto;
+        scrollbar-width: none;
+      }
+      .main-scroll::-webkit-scrollbar {
+        display: none;
+      }
+
+      .grid-overlay {
+        background-image:
+          linear-gradient(var(--grid-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+
+      .nav-group-label {
+        color: rgba(255, 255, 255, 0.45) !important;
+      }
+
+      .sidebar-logo-border {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .sidebar-footer-border {
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .mobile-overlay {
+        display: none;
+      }
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100vh;
+          z-index: 50;
+          transform: translateX(-100%);
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.mobile-open {
+          transform: translateX(0);
+          width: 240px !important;
+          min-width: 240px !important;
+        }
+        .sidebar.mobile-open .nav-label,
+        .sidebar.mobile-open .nav-badge,
+        .sidebar.mobile-open .nav-group-label,
+        .sidebar.mobile-open .logo-text {
+          opacity: 1;
+          width: auto;
+        }
+        .mobile-overlay {
+          display: block;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.4);
+          z-index: 49;
+          backdrop-filter: blur(2px);
+        }
+      }
+    `,
+  ],
+  template: `
+    <div
+      class="h-screen w-full overflow-hidden relative font-sans"
+      [style.background]="'var(--bg-app)'"
+      [style.color]="'var(--text-primary)'"
+    >
+      <div class="absolute inset-0 pointer-events-none opacity-60 grid-overlay"></div>
+
+      @if (mobileOpen()) {
+        <div class="mobile-overlay" (click)="mobileOpen.set(false)"></div>
+      }
+
+      <div class="relative z-10 flex h-full">
+        <aside
+          class="sidebar flex flex-col h-screen sticky top-0 flex-shrink-0"
+          [class.collapsed]="collapsed()"
+          [class.mobile-open]="mobileOpen()"
+          [style.background]="'var(--primary-600)'"
+          [style.boxShadow]="'var(--shadow-sm)'"
+        >
+          <div
+            class="flex items-center gap-3 px-4 py-4 flex-shrink-0 sidebar-logo-border"
+            [style.minHeight]="'61px'"
+          >
+            <div
+              class="flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center"
+              [style.background]="'rgba(255,255,255,0.2)'"
+              [style.color]="'#fff'"
+              [style.fontSize]="'1rem'"
+            >
+              <i class="pi pi-users"></i>
+            </div>
+            <span class="logo-text font-semibold text-sm tracking-tight" style="color:#fff">
+              ClubPolls
+            </span>
+          </div>
+
+          <nav class="sidebar-nav flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1">
+            @for (group of navGroups(); track group.group) {
+              <div class="mb-1">
+                <p class="nav-group-label px-2 mb-1 text-[10px] font-semibold uppercase tracking-widest">
+                  {{ group.group }}
+                </p>
+                @for (item of group.items; track item.route) {
+                  <a
+                    [routerLink]="item.route"
+                    routerLinkActive="active"
+                    class="nav-item"
+                    [attr.data-label]="item.label"
+                  >
+                    <i class="nav-icon pi {{ item.icon }}"></i>
+                    <span class="nav-label flex-1">{{ item.label }}</span>
+                    @if (item.badge) {
+                      <span
+                        class="nav-badge text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        [style.background]="'rgba(255,255,255,0.2)'"
+                        [style.color]="'#fff'"
+                      >
+                        {{ item.badge }}
+                      </span>
+                    }
+                  </a>
+                }
+              </div>
+            }
+          </nav>
+
+          <div class="px-2 py-3 flex flex-col gap-1 flex-shrink-0 sidebar-footer-border">
+            <div class="nav-item cursor-pointer" (click)="menu.toggle($event)">
+              <div
+                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                [style.background]="'rgba(255,255,255,0.25)'"
+                [style.color]="'#fff'"
+              >
+                {{ userInitials() }}
+              </div>
+              <div class="nav-label flex flex-col leading-tight">
+                <span class="text-xs font-medium" style="color:#fff">{{ userName() }}</span>
+                <span class="text-[10px] capitalize" style="color:rgba(255,255,255,0.6)">
+                  {{ userRole() }}
+                </span>
+              </div>
+            </div>
+
+            <p-menu #menu [model]="userMenuItems" [popup]="true" appendTo="body">
+              <ng-template pTemplate="item" let-item>
+                @if (item.routerLink) {
+                  <a
+                    [routerLink]="item.routerLink"
+                    class="flex items-center p-menuitem-link gap-2 px-3 py-2"
+                  >
+                    <span [class]="item.icon"></span>
+                    <span class="text-sm">{{ item.label }}</span>
+                  </a>
+                } @else {
+                  <a
+                    href="javascript:void(0)"
+                    (click)="item.command()"
+                    class="flex items-center p-menuitem-link gap-2 px-3 py-2 text-red-500"
+                  >
+                    <span [class]="item.icon"></span>
+                    <span class="text-sm font-medium">{{ item.label }}</span>
+                  </a>
+                }
+              </ng-template>
+            </p-menu>
+
+            <button
+              (click)="collapsed.set(!collapsed())"
+              class="nav-item w-full text-left hidden md:flex"
+              [attr.data-label]="collapsed() ? 'Expand' : 'Collapse'"
+            >
+              <i
+                class="nav-icon pi"
+                [class.pi-angle-double-right]="collapsed()"
+                [class.pi-angle-double-left]="!collapsed()"
+              ></i>
+              <span class="nav-label text-xs">Collapse</span>
+            </button>
+          </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+          <header
+            class="sticky top-0 z-30 flex items-center justify-between px-6 py-3 gap-4 flex-shrink-0"
+            [style.background]="'color-mix(in srgb, var(--bg-panel) 85%, transparent)'"
+            [style.borderBottom]="'1px solid var(--border-default)'"
+            [style.backdropFilter]="'blur(12px)'"
+            [style.minHeight]="'61px'"
+          >
+            <button
+              class="md:hidden p-2 rounded-md"
+              [style.color]="'var(--text-muted)'"
+              (click)="mobileOpen.set(true)"
+            >
+              <i class="pi pi-bars text-base"></i>
+            </button>
+
+            <div class="flex-1 min-w-0">
+              <ng-content select="[header]"></ng-content>
+            </div>
+
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <ng-content select="[header-actions]"></ng-content>
+
+              <button
+                class="relative w-9 h-9 rounded-md flex items-center justify-center transition-colors"
+                [style.color]="'var(--text-muted)'"
+                [style.border]="'1px solid var(--border-default)'"
+              >
+                <i class="pi pi-bell text-sm"></i>
+                <span
+                  class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                  [style.background]="'var(--danger)'"
+                ></span>
+              </button>
+
+              <button
+                (click)="toggleDark()"
+                class="w-9 h-9 rounded-md flex items-center justify-center transition-colors"
+                [style.color]="'var(--text-muted)'"
+                [style.border]="'1px solid var(--border-default)'"
+              >
+                <i class="pi text-sm" [class.pi-moon]="!isDark()" [class.pi-sun]="isDark()"></i>
+              </button>
+            </div>
+          </header>
+
+          <div class="main-scroll flex-1 flex flex-col min-h-0">
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[100rem] w-full mx-auto">
+              <main class="col-span-12 lg:col-span-9 flex flex-col gap-5 min-w-0">
+                <ng-content select="[main-content]"></ng-content>
+                <ng-content select="[bottom-main-content]"></ng-content>
+              </main>
+
+              <aside class="col-span-12 lg:col-span-3 flex flex-col gap-5 min-w-0">
+                <ng-content select="[side-panel]"></ng-content>
+              </aside>
+            </div>
+
+            <footer
+              class="px-6 py-3 flex items-center justify-between text-[11px] flex-shrink-0"
+              [style.color]="'var(--text-ghost)'"
+              [style.borderTop]="'1px solid var(--border-default)'"
+            >
+              <span>ClubPolls &copy; {{ currentYear }}</span>
+              <ng-content select="[footer]"></ng-content>
+              <span>v1.0.0</span>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+})
+export class DashboardShellComponent {
+  private readonly authStore = inject(AuthStore);
+
+  collapsed = signal(false);
+  mobileOpen = signal(false);
+  isDark = signal(false);
+  currentYear = new Date().getFullYear();
+
+  navGroups = computed<NavGroup[]>(() => {
+    const isAdmin = this.authStore.isAdmin();
+    const groups: NavGroup[] = [
+      {
+        group: 'Overview',
+        items: [{ label: 'Dashboard', icon: 'pi-chart-pie', route: '/dashboard' }],
+      },
+      {
+        group: 'Voting',
+        items: [
+          { label: 'Elections', icon: 'pi-check-square', route: '/elections' },
+          { label: 'Leadership History', icon: 'pi-history', route: '/elections/history' },
+        ],
+      },
+      {
+        group: 'Finance',
+        items: [{ label: 'Payments', icon: 'pi-money-bill', route: '/payments' }],
+      },
+    ];
+
+    if (isAdmin) {
+      groups.splice(1, 0, {
+        group: 'Manage',
+        items: [
+          { label: 'Members', icon: 'pi-users', route: '/members' },
+          { label: 'Fee Settings', icon: 'pi-cog', route: '/fee-settings' },
+        ],
+      });
+      groups.push({
+        group: 'M-Pesa',
+        items: [{ label: 'Transactions', icon: 'pi-mobile', route: '/transactions' }],
+      });
+    }
+
+    return groups;
+  });
+
+  userName = computed(() => this.authStore.currentUser()?.name ?? 'Club User');
+  userRole = computed(() => this.authStore.currentUser()?.role ?? 'member');
+  userInitials = computed(() =>
+    this.userName()
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+  );
+
+  userMenuItems: MenuItem[] = [
+    {
+      label: 'Dashboard',
+      icon: 'pi pi-chart-pie',
+      routerLink: '/dashboard',
+    },
+    {
+      separator: true,
+    },
+    {
+      label: 'Logout',
+      icon: 'pi pi-sign-out',
+      command: () => this.authStore.logout(),
+    },
+  ];
+
+  toggleDark() {
+    this.isDark.update((value) => !value);
+    document.documentElement.classList.toggle('dark', this.isDark());
+  }
+}

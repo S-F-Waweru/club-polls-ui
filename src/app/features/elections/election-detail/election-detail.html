@@ -1,0 +1,156 @@
+<app-dashboard-shell>
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-check-square text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">{{ election()?.title || 'Election' }}</h1>
+        <p class="text-xs text-txt-muted mt-0.5">{{ election()?.description || 'Club leadership voting' }}</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      @if (election(); as election) {
+        <p-tag [value]="election.status" [severity]="statusSeverity(election.status)" />
+        @if (isAdmin() && election.status === 'CLOSED') {
+          <p-button label="Tally" icon="pi pi-calculator" size="small" severity="primary" [loading]="store.isLoading()" (onClick)="tally()" />
+        }
+      }
+      <p-button label="Back" icon="pi pi-arrow-left" size="small" [outlined]="true" severity="secondary" routerLink="/elections" />
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-400">
+      <i class="pi pi-exclamation-circle mr-2"></i>{{ store.error() }}
+    </div>
+  }
+
+  @if (store.successMessage()) {
+    <div class="border border-green-500/30 bg-green-500/10 rounded-lg p-3 text-xs text-green-400">
+      <i class="pi pi-check-circle mr-2"></i>{{ store.successMessage() }}
+    </div>
+  }
+
+  <ng-container main-content>
+    @if (election(); as election) {
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+          <p class="text-[10px] text-txt-muted uppercase font-medium mb-1">Starts</p>
+          <p class="text-sm font-semibold text-txt-main">{{ election.startsAt | date:'medium' }}</p>
+        </div>
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+          <p class="text-[10px] text-txt-muted uppercase font-medium mb-1">Ends</p>
+          <p class="text-sm font-semibold text-txt-main">{{ election.endsAt | date:'medium' }}</p>
+        </div>
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+          <p class="text-[10px] text-txt-muted uppercase font-medium mb-1">Candidates</p>
+          <p class="text-sm font-semibold text-txt-main">{{ candidates().length }}</p>
+        </div>
+      </div>
+
+      @for (position of positions; track position.value) {
+        <div class="border border-border-muted bg-panel-bg rounded-xl overflow-hidden backdrop-blur-xl">
+          <div class="p-5 border-b border-border-muted flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-txt-main tracking-tight">{{ position.label }}</h3>
+            <span class="text-[10px] text-txt-muted">{{ candidatesFor(position.value).length }} candidates</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
+            @for (candidate of candidatesFor(position.value); track candidate.id) {
+              <div class="border border-border-muted rounded-xl p-4 flex flex-col gap-4">
+                <div class="flex items-start gap-3">
+                  @if (candidate.profilePhotoUrl || candidate.member.profilePhotoUrl) {
+                    <img [src]="candidate.profilePhotoUrl || candidate.member.profilePhotoUrl" [alt]="candidate.member.fullName" class="w-12 h-12 rounded-full object-cover shrink-0" />
+                  } @else {
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                         [style.background]="avatarBg(candidate.member.fullName)"
+                         style="color:#fff">
+                      {{ initials(candidate.member.fullName) }}
+                    </div>
+                  }
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-txt-main truncate">{{ candidate.member.fullName }}</p>
+                    <p class="text-xs font-mono" style="color: var(--primary-400)">{{ candidate.member.memberId }}</p>
+                    @if (candidate.manifesto) {
+                      <p class="text-xs text-txt-muted mt-2 line-clamp-3">{{ candidate.manifesto }}</p>
+                    }
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-3 pt-3 border-t border-border-muted">
+                  @if (resultFor(candidate); as result) {
+                    <div>
+                      <p class="text-[10px] text-txt-muted uppercase">Votes</p>
+                      <p class="text-sm font-bold text-txt-main">{{ result.totalVotes | number }}</p>
+                    </div>
+                    @if (result.isWinner) {
+                      <p-tag value="Winner" severity="success" />
+                    }
+                  } @else {
+                    <span class="text-xs text-txt-muted">{{ position.label }}</span>
+                  }
+
+                  @if (isMember() && election.status === 'OPEN') {
+                    <p-button label="Vote" icon="pi pi-check" size="small" severity="primary" (onClick)="castVote(candidate)" />
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="md:col-span-2 text-center py-8 text-xs text-txt-muted">
+                <i class="pi pi-user text-2xl block mb-2 opacity-30"></i>
+                No candidates added for {{ position.label }}.
+              </div>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-12 text-center">
+        <i class="pi pi-spin pi-spinner text-2xl text-txt-muted mb-3 block"></i>
+        <p class="text-sm text-txt-muted">Loading election...</p>
+      </div>
+    }
+  </ng-container>
+
+  <ng-container side-panel>
+    @if (isAdmin()) {
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-txt-main tracking-tight">Add Candidate</h3>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Member ID</label>
+          <input pInputText [(ngModel)]="candidateForm.memberId" placeholder="M-000-001" class="w-full text-sm font-mono" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Position</label>
+          <p-select [(ngModel)]="candidateForm.position" [options]="positions" optionLabel="label" optionValue="value" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Photo URL</label>
+          <input pInputText [(ngModel)]="candidateForm.profilePhotoUrl" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-txt-muted">Manifesto</label>
+          <textarea
+            [(ngModel)]="candidateForm.manifesto"
+            rows="4"
+            class="w-full text-sm rounded-md px-3 py-2 outline-none"
+            style="background: var(--bg-panel); border: 1px solid var(--border-default); color: var(--text-primary); resize: vertical;"></textarea>
+        </div>
+        <p-button label="Add Candidate" icon="pi pi-plus" size="small" severity="primary" [loading]="store.isLoading()" (onClick)="addCandidate()" />
+      </div>
+    }
+
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Results</h3>
+      @for (position of positions; track position.value) {
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-txt-muted">{{ position.label }}</span>
+          <span class="text-txt-main font-medium">{{ resultsFor(position.value).length }} rows</span>
+        </div>
+      }
+    </div>
+  </ng-container>
+</app-dashboard-shell>

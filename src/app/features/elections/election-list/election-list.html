@@ -1,0 +1,102 @@
+<app-dashboard-shell>
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-check-square text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">Elections</h1>
+        <p class="text-xs text-txt-muted mt-0.5">Club leadership voting windows and results</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <p-button label="History" icon="pi pi-history" size="small" [outlined]="true" severity="secondary" routerLink="/elections/history" />
+      @if (isAdmin()) {
+        <p-button label="New Election" icon="pi pi-plus" size="small" severity="primary" routerLink="/elections/new" />
+      }
+    </div>
+  </div>
+
+  @if (store.error()) {
+    <div class="border border-red-500/30 bg-red-500/10 rounded-lg p-3 text-xs text-red-400">
+      <i class="pi pi-exclamation-circle mr-2"></i>{{ store.error() }}
+    </div>
+  }
+
+  <ng-container main-content>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for (stat of stats(); track stat.label) {
+        <div class="border border-border-muted bg-panel-bg rounded-xl p-4 backdrop-blur-xl">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-txt-muted">{{ stat.label }}</span>
+          <h3 class="text-2xl font-bold tracking-tight text-txt-main mt-1">{{ stat.value }}</h3>
+          <span class="text-[11px]" [style.color]="stat.color">{{ stat.sub }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      @for (filter of filters; track filter) {
+        <button
+          (click)="activeFilter.set(filter)"
+          class="px-3 py-1.5 rounded-md text-xs font-medium border transition-all"
+          [style.background]="activeFilter() === filter ? 'color-mix(in srgb, var(--primary-500) 12%, transparent)' : 'transparent'"
+          [style.borderColor]="activeFilter() === filter ? 'color-mix(in srgb, var(--primary-500) 30%, transparent)' : 'var(--border-default)'"
+          [style.color]="activeFilter() === filter ? 'var(--primary-500)' : 'var(--text-muted)'">
+          {{ filter }}
+        </button>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @for (election of elections(); track election.id) {
+        <a [routerLink]="['/elections', election.id]"
+           class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl hover:bg-white/5 transition-all no-underline">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-txt-main tracking-tight truncate">{{ election.title }}</h3>
+              <p class="text-xs text-txt-muted mt-1 line-clamp-2">{{ election.description || 'No description' }}</p>
+            </div>
+            <p-tag [value]="election.status" [severity]="statusSeverity(election.status)" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mt-5">
+            <div class="border border-border-muted rounded-lg p-3">
+              <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Starts</p>
+              <p class="text-xs text-txt-main">{{ election.startsAt | date:'medium' }}</p>
+            </div>
+            <div class="border border-border-muted rounded-lg p-3">
+              <p class="text-[10px] text-txt-muted uppercase tracking-wider mb-1">Ends</p>
+              <p class="text-xs text-txt-main">{{ election.endsAt | date:'medium' }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-4 pt-4 border-t border-border-muted text-xs">
+            <span class="text-txt-muted">{{ election.candidates?.length || 0 }} candidates</span>
+            <span style="color: var(--primary-400)">Open details</span>
+          </div>
+        </a>
+      } @empty {
+        <div class="md:col-span-2 border border-border-muted bg-panel-bg rounded-xl p-12 text-center">
+          <i class="pi pi-inbox text-3xl text-txt-muted block mb-3"></i>
+          <p class="text-sm text-txt-muted">No elections found.</p>
+        </div>
+      }
+    </div>
+  </ng-container>
+
+  <ng-container side-panel>
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl flex flex-col gap-3">
+      <h3 class="text-sm font-semibold text-txt-main tracking-tight">Open Elections</h3>
+      @for (election of store.openElections(); track election.id) {
+        <a [routerLink]="['/elections', election.id]" class="rounded-lg border border-border-muted px-3 py-2 no-underline hover:bg-white/5 transition">
+          <p class="text-xs font-medium text-txt-main truncate">{{ election.title }}</p>
+          <p class="text-[10px] text-txt-muted">{{ election.endsAt | date:'short' }}</p>
+        </a>
+      } @empty {
+        <p class="text-xs text-txt-muted">No voting window is open.</p>
+      }
+    </div>
+  </ng-container>
+</app-dashboard-shell>
