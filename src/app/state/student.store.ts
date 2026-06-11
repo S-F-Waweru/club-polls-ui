@@ -18,20 +18,48 @@ import { environment } from '../../environments/environment';
 // ============================================================================
 // 1. Models & DTO Interfaces (Derived from your OpenAPI Spec)
 // ============================================================================
-export interface Student {
-  id: string;               // Database generated UUID
-  studentId: string;        // e.g., STU001
+export interface StudentStatement {
+  studentId: string;
+  nationalId?: string | null;
   fullName: string;
-  email: string;            // added
+  email: string;
   phone: string;
-  dateOfBirth?: string;     // added (optional)
-  address?: string;         // added (optional)
-  admissionDate: string;    // added
+  walletBalance: number;
+  overallPaid: number;
+  overallBalance: number;
+  enrollments: {
+    course: string;
+    enrolledAt: string;
+    invoiceTotal: number;
+    balance: number;
+    invoiceStatus: string;
+    totalPaid: number;
+    payments: {
+      amount: number;
+      method: string;
+      transactionRef: string;
+      status: string;
+      paidAt: string;
+    }[];
+  }[];
+}
+
+export interface Student {
+  id: string; // Database generated UUID
+  studentId: string; // e.g., STU001
+  nationalId?: string | null;
+  fullName: string;
+  email: string; // added
+  phone: string;
+  dateOfBirth?: string; // added (optional)
+  address?: string; // added (optional)
+  admissionDate: string; // added
   status: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN'; // added (use StudentStatus enum)
   guardianName?: string;
   guardianPhone?: string;
   createdAt: string;
-  enrollments: Enrollment[],
+  enrollments: Enrollment[];
+  wallet?: Wallet;
 }
 export interface Course {
   id: string;
@@ -83,15 +111,27 @@ export interface Enrollment {
 
 export interface CreateStudentDto {
   studentId?: string;
+  nationalId?: string;
   fullName: string;
+  email: string;
   phone: string;
+  dateOfBirth?: string;
+  address?: string;
+  admissionDate: string;
+  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
   guardianName?: string;
   guardianPhone?: string;
 }
 
 export interface UpdateStudentDto {
+  nationalId?: string;
   fullName?: string;
+  email?: string;
   phone?: string;
+  dateOfBirth?: string;
+  address?: string;
+  admissionDate?: string;
+  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
   guardianName?: string;
   guardianPhone?: string;
 }
@@ -103,6 +143,24 @@ export interface PaginatedResponse<T> {
   lastPage: number;
 }
 
+
+export interface WalletTransaction {
+  id: string;
+  type: 'CREDIT' | 'DEBIT';
+  reason: 'OVERPAYMENT' | 'APPLIED_TO_INVOICE' | 'REFUND';
+  amount: number;
+  referenceId: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface Wallet {
+  id: string;
+  balance: number;
+  transactions: WalletTransaction[];
+  createdAt: string;
+  updatedAt: string;
+}
 // ============================================================================
 // 2. Operational State Interface
 // ============================================================================
@@ -113,6 +171,8 @@ export interface StudentsState {
   totalRecords: number;
   isLoading: boolean;
   error: string | null;
+  statement: StudentStatement | null;
+  statementLoading: boolean;
 }
 
 const initialStudentsState: StudentsState = {
@@ -122,6 +182,8 @@ const initialStudentsState: StudentsState = {
   totalRecords: 0,
   isLoading: false,
   error: null,
+  statement: null,
+  statementLoading: false,
 };
 
 // ============================================================================
@@ -399,6 +461,49 @@ export const StudentsStore = signalStore(
         ),
       ),
 
+      loadStatement: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { statementLoading: true, error: null })),
+          switchMap((identifier) =>
+            http.get<StudentStatement>(`${environment.apiUrl}students/${identifier}/statement`).pipe(
+              catchError((err) => {
+                patchState(store, {
+                  error: err.error?.message || 'Failed to load statement.',
+                  statementLoading: false,
+                });
+                return EMPTY;
+              }),
+            ),
+          ),
+          tap((statement) => patchState(store, { statement, statementLoading: false })),
+        ),
+      ),
+
+      downloadStatementPdf: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((identifier) =>
+            http.get(`${environment.apiUrl}students/${identifier}/statement/pdf`, {
+              responseType: 'blob',
+            }).pipe(
+              catchError((err) => {
+                patchState(store, { error: 'Failed to download PDF.', isLoading: false });
+                return EMPTY;
+              }),
+            ),
+          ),
+          tap((blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `statement.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            patchState(store, { isLoading: false });
+          }),
+        ),
+      ),
+
       // Expose the watcher so the initialization hook can read it
       _runWatcher: loadPaginatedStudents,
     };
@@ -420,17 +525,3 @@ export const StudentsStore = signalStore(
   })
 );
 
-
-// In student.store.ts - add to CreateStudentDto
-export interface CreateStudentDto {
-  studentId?: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  dateOfBirth?: string;
-  address?: string;
-  admissionDate: string;
-  status?: 'ACTIVE' | 'GRADUATED' | 'WITHDRAWN';
-  guardianName?: string;
-  guardianPhone?: string;
-}

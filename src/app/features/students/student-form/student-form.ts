@@ -33,6 +33,7 @@ export class StudentFormComponent implements OnInit {
   statusOptions = ['ACTIVE', 'GRADUATED', 'WITHDRAWN'];
 
   form: CreateStudentDto = {
+    nationalId: '',
     fullName: '',
     email: '',
     phone: '',
@@ -53,6 +54,7 @@ export class StudentFormComponent implements OnInit {
         this.studentUUID = student.id;
         this.form = {
           studentId: student.studentId,
+          nationalId: student.nationalId || '',
           fullName: student.fullName,
           email: student.email,
           phone: student.phone,
@@ -70,6 +72,7 @@ export class StudentFormComponent implements OnInit {
     const { studentId, ...rest } = this.form;
     const payload = {
       ...rest,
+      nationalId: rest.nationalId || undefined,
       dateOfBirth: rest.dateOfBirth || undefined,
       address: rest.address || undefined,
       guardianName: rest.guardianName || undefined,

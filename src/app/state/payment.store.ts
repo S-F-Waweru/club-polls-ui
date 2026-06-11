@@ -7,7 +7,7 @@ import { pipe, switchMap, tap, debounceTime, distinctUntilChanged, map, catchErr
 import { environment } from '../../environments/environment';
 
 export type PaymentMethod = 'MPESA' | 'BANK' | 'CASH';
-export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+export type PaymentStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
 
 export interface PaymentInvoice {
   id: string;
@@ -44,7 +44,7 @@ export interface Payment {
   paid_at: string;
   synced_at: string | null;
   invoice: PaymentInvoice;
-  recordedBy: RecordedBy;
+  recordedBy: RecordedBy | null;
 }
 
 export interface CreatePaymentDto {
@@ -222,6 +222,31 @@ export const PaymentsStore = signalStore(
         ),
       ),
 
+      downloadReceiptPdf: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((id) =>
+            http
+              .get(`${environment.apiUrl}payments/${id}/receipt/pdf`, {
+                responseType: 'blob',
+              })
+              .pipe(
+                tap({
+                  next: (blob) => {
+                    openPdfBlob(blob, `payment-receipt-${id}.pdf`);
+                    patchState(store, { isLoading: false });
+                  },
+                  error: (err) =>
+                    patchState(store, {
+                      error: err.error?.message || 'Failed to download receipt.',
+                      isLoading: false,
+                    }),
+                }),
+              ),
+          ),
+        ),
+      ),
+
       _runWatcher: loadPaginated,
     };
   }),
@@ -232,3 +257,17 @@ export const PaymentsStore = signalStore(
     },
   }),
 );
+
+function openPdfBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const opened = window.open(url, '_blank');
+
+  if (!opened) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  }
+
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+}

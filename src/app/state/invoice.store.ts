@@ -208,6 +208,31 @@ export const InvoicesStore = signalStore(
         ),
       ),
 
+      downloadInvoicePdf: rxMethod<string>(
+        pipe(
+          tap(() => patchState(store, { isLoading: true, error: null })),
+          switchMap((id) =>
+            http
+              .get(`${environment.apiUrl}invoice/${id}/pdf`, {
+                responseType: 'blob',
+              })
+              .pipe(
+                tap({
+                  next: (blob) => {
+                    openPdfBlob(blob, `invoice-${id}.pdf`);
+                    patchState(store, { isLoading: false });
+                  },
+                  error: (err) =>
+                    patchState(store, {
+                      error: err.error?.message || 'Failed to download invoice.',
+                      isLoading: false,
+                    }),
+                }),
+              ),
+          ),
+        ),
+      ),
+
       _runWatcher: loadPaginated,
     };
   }),
@@ -221,3 +246,17 @@ export const InvoicesStore = signalStore(
     },
   }),
 );
+
+function openPdfBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const opened = window.open(url, '_blank');
+
+  if (!opened) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  }
+
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+}

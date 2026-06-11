@@ -149,6 +149,8 @@
             <p-tab value="1">Invoices</p-tab>
             <p-tab value="2">Payments</p-tab>
             <p-tab value="3">Balance</p-tab>
+            <p-tab value="4">Wallet</p-tab>
+            <p-tab value="5">Statement</p-tab>
           </p-tablist>
 
           <p-tabpanels>
@@ -271,6 +273,160 @@
                     KES {{ balanceSummary().totalBalance | number }}
                   </p>
                 </div>
+              </div>
+            </p-tabpanel>
+
+            <!-- WALLET -->
+            <p-tabpanel value="4">
+              <div class="p-3">
+                <!-- Wallet Balance Card -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                    <p class="text-xs text-txt-muted uppercase font-medium">Wallet Balance</p>
+                    <p class="text-2xl font-bold"
+                       [class.text-green-400]="walletBalance() > 0"
+                       [class.text-txt-muted]="walletBalance() === 0">
+                      KES {{ walletBalance() | number }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Wallet Transactions -->
+                @if (walletTransactions().length) {
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Type</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Reason</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Amount</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Note</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Date</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      @for (tx of walletTransactions(); track tx.id) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3">
+                            <p-tag
+                              [value]="tx.type"
+                              [severity]="tx.type === 'CREDIT' ? 'success' : 'danger'" />
+                          </td>
+                          <td class="py-2 px-3 text-txt-muted text-xs">{{ tx.reason }}</td>
+                          <td class="py-2 px-3 text-txt-main font-medium">KES {{ tx.amount | number }}</td>
+                          <td class="py-2 px-3 text-txt-muted text-xs">{{ tx.note || '—' }}</td>
+                          <td class="py-2 px-3 text-txt-muted">{{ tx.createdAt | date:'mediumDate' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No wallet transactions found.</p>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- STATEMENT -->
+            <p-tabpanel value="5">
+              <div class="p-3">
+
+                <!-- Actions bar -->
+                <div class="flex justify-between items-center mb-4">
+                  <p class="text-sm text-txt-muted">Full fee account statement</p>
+                  <p-button
+                    label="Download PDF"
+                    icon="pi pi-download"
+                    size="small"
+                    severity="primary"
+                    [outlined]="true"
+                    (click)="store.downloadStatementPdf(student()!.studentId)" />
+                </div>
+
+                @if (statementLoading()) {
+                  <p class="text-sm text-txt-muted italic">Loading statement...</p>
+                } @else if (statement(); as st) {
+
+                  <!-- Summary cards -->
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                      <p class="text-xs text-txt-muted uppercase font-medium">Total Charged</p>
+                      <p class="text-xl font-bold text-txt-main">
+                        KES {{ (st.overallPaid + st.overallBalance) | number }}
+                      </p>
+                    </div>
+                    <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                      <p class="text-xs text-txt-muted uppercase font-medium">Total Paid</p>
+                      <p class="text-xl font-bold text-green-400">KES {{ st.overallPaid | number }}</p>
+                    </div>
+                    <div class="border border-border-muted rounded-xl p-4 bg-panel-bg flex flex-col gap-1">
+                      <p class="text-xs text-txt-muted uppercase font-medium">Balance Due</p>
+                      <p class="text-xl font-bold"
+                         [class.text-red-400]="st.overallBalance > 0"
+                         [class.text-green-400]="st.overallBalance === 0">
+                        KES {{ st.overallBalance | number }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Ledger table -->
+                  <table class="w-full text-sm">
+                    <thead>
+                    <tr class="border-b border-border-muted text-left">
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Date</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Description</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3">Ref / Method</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3 text-right">Charges (Dr)</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3 text-right">Payments (Cr)</th>
+                      <th class="text-[10px] uppercase text-txt-muted font-medium py-2 px-3 text-right">Balance</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- Opening -->
+                    <tr class="border-b border-border-muted/40">
+                      <td class="py-2 px-3 text-txt-muted text-xs">—</td>
+                      <td class="py-2 px-3 text-txt-main font-medium" colspan="4">Opening Balance</td>
+                      <td class="py-2 px-3 text-right text-txt-main font-mono text-xs">KES 0.00</td>
+                    </tr>
+
+                      @for (entry of statementRows(st); track $index) {
+                        <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+                          <td class="py-2 px-3 text-txt-muted text-xs">{{ entry.date }}</td>
+                          <td class="py-2 px-3 text-txt-main">{{ entry.description }}</td>
+                          <td class="py-2 px-3 text-txt-muted text-xs font-mono">{{ entry.ref }}</td>
+                          <td class="py-2 px-3 text-right text-red-400 font-medium text-xs">
+                            {{ entry.debit > 0 ? ('KES ' + (entry.debit | number)) : '' }}
+                          </td>
+                          <td class="py-2 px-3 text-right text-green-400 font-medium text-xs">
+                            {{ entry.credit > 0 ? ('KES ' + (entry.credit | number)) : '' }}
+                          </td>
+                          <td class="py-2 px-3 text-right font-mono text-xs font-bold"
+                              [class.text-red-400]="entry.runningBalance > 0"
+                              [class.text-green-400]="entry.runningBalance <= 0">
+                            KES {{ entry.runningBalance | number:'1.2-2' }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+
+                  <!-- Closing balance -->
+                  <div class="mt-4 flex justify-end">
+                    <div class="border rounded-xl px-6 py-3 flex gap-8 items-center"
+                         [class.border-red-400]="st.overallBalance > 0"
+                         [class.border-green-400]="st.overallBalance === 0"
+                         [class.bg-red-950]="st.overallBalance > 0"
+                         [class.bg-green-950]="st.overallBalance === 0">
+                      <span class="text-xs uppercase font-medium text-txt-muted">Closing Balance</span>
+                      <span class="text-lg font-bold"
+                            [class.text-red-400]="st.overallBalance > 0"
+                            [class.text-green-400]="st.overallBalance === 0">
+            KES {{ st.overallBalance | number:'1.2-2' }}
+          </span>
+                    </div>
+                  </div>
+
+                } @else {
+                  <p class="text-sm text-txt-muted italic">No statement data available.</p>
+                }
               </div>
             </p-tabpanel>
           </p-tabpanels>

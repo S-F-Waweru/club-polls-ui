@@ -130,6 +130,11 @@
                         style="color: var(--text-muted); border: 1px solid var(--border-default)" title="View">
                   <i class="pi pi-eye text-xs"></i>
                 </button>
+                <button (click)="invoiceStore.downloadInvoicePdf(inv.id)"
+                        class="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style="color: var(--text-muted); border: 1px solid var(--border-default)" title="Print invoice">
+                  <i class="pi pi-print text-xs"></i>
+                </button>
                 <button (click)="confirmDelete(inv)"
                         class="w-7 h-7 rounded flex items-center justify-center transition-colors"
                         style="color: #ef4444; border: 1px solid #ef444440" title="Delete">

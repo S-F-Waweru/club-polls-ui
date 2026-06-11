@@ -1,0 +1,326 @@
+<app-dashboard-shell>
+
+  <!-- Header -->
+  <div header class="w-full flex justify-between items-center flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg border flex items-center justify-center"
+           style="background-color: color-mix(in srgb, var(--primary-500) 10%, transparent);
+                  border-color: color-mix(in srgb, var(--primary-500) 20%, transparent);">
+        <i class="pi pi-mobile text-lg" style="color: var(--primary-500)"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-txt-main">M-Pesa Transactions</h1>
+        <p class="text-xs text-txt-muted mt-0.5">
+          Live feed · refreshes in
+          <span class="font-mono" style="color: var(--primary-400)">
+            {{ store.pollingEnabled() ? countdown + 's' : 'paused' }}
+          </span>
+        </p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <p-button
+        [icon]="store.pollingEnabled() ? 'pi pi-pause' : 'pi pi-play'"
+        [label]="store.pollingEnabled() ? 'Pause' : 'Resume'"
+        size="small"
+        [outlined]="true"
+        severity="secondary"
+        (onClick)="store.togglePolling()" />
+      <p-button
+        icon="pi pi-refresh"
+        label="Refresh"
+        size="small"
+        [outlined]="true"
+        severity="secondary"
+        [loading]="store.isLoading()"
+        (onClick)="store.refresh()" />
+    </div>
+  </div>
+
+  <ng-container main-content>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4">
+        <p class="text-xs text-txt-muted uppercase font-medium mb-1">Completed</p>
+        <p class="text-2xl font-bold text-green-400">{{ summary().completed }}</p>
+      </div>
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4">
+        <p class="text-xs text-txt-muted uppercase font-medium mb-1">Pending</p>
+        <p class="text-2xl font-bold text-yellow-400">{{ summary().pending }}</p>
+      </div>
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4">
+        <p class="text-xs text-txt-muted uppercase font-medium mb-1">Failed</p>
+        <p class="text-2xl font-bold text-red-400">{{ summary().failed }}</p>
+      </div>
+      <div class="border border-border-muted bg-panel-bg rounded-xl p-4">
+        <p class="text-xs text-txt-muted uppercase font-medium mb-1">Total Collected</p>
+        <p class="text-2xl font-bold text-txt-main">KES {{ summary().totalAmount | number }}</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-4 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-txt-main flex items-center gap-2">
+          <i class="pi pi-filter text-xs" style="color: var(--primary-400)"></i>
+          Filters
+          @if (hasActiveFilters()) {
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                  style="background: color-mix(in srgb, var(--primary-500) 15%, transparent);
+                         color: var(--primary-400)">Active</span>
+          }
+        </h3>
+        @if (hasActiveFilters()) {
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            size="small"
+            [text]="true"
+            severity="danger"
+            (onClick)="clearFilters()" />
+        }
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Status"
+          styleClass="w-full text-sm" />
+
+        <p-select
+          [options]="typeOptions"
+          [(ngModel)]="selectedType"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Type"
+          styleClass="w-full text-sm" />
+
+        <input
+          pInputText
+          [(ngModel)]="phoneSearch"
+          placeholder="Phone number"
+          class="w-full text-sm" />
+
+        <input
+          pInputText
+          [(ngModel)]="accountRefSearch"
+          placeholder="Account ref (e.g. STU009)"
+          class="w-full text-sm" />
+
+        <p-datepicker
+          [(ngModel)]="dateFrom"
+          placeholder="From date"
+          styleClass="w-full text-sm"
+          dateFormat="dd/mm/yy" />
+
+        <p-datepicker
+          [(ngModel)]="dateTo"
+          placeholder="To date"
+          styleClass="w-full text-sm"
+          dateFormat="dd/mm/yy" />
+      </div>
+
+      <div class="flex justify-end">
+        <p-button
+          label="Apply Filters"
+          icon="pi pi-search"
+          size="small"
+          severity="primary"
+          (onClick)="applyFilters()" />
+      </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="border border-border-muted bg-panel-bg rounded-xl backdrop-blur-xl overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border-muted">
+        <h2 class="text-sm font-semibold text-txt-main">Transactions</h2>
+        <span class="text-xs text-txt-muted">{{ store.total() }} total</span>
+      </div>
+
+      <!-- Loading Skeleton -->
+      @if (store.isLoading()) {
+        <div class="p-4 flex flex-col gap-3">
+          @for (i of [1,2,3,4,5]; track i) {
+            <p-skeleton height="2.5rem" borderRadius="8px" />
+          }
+        </div>
+      }
+
+      @if (!store.isLoading()) {
+        <p-table
+          [value]="store.transactions()"
+          responsiveLayout="scroll"
+          [paginator]="false"
+          styleClass="p-datatable-sm">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">#</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Receipt No</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Type</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Phone</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Account Ref</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Amount</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Status</th>
+              <th class="bg-transparent! text-txt-muted! font-medium! text-[10px] uppercase tracking-wider py-3 px-5">Date</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-tx let-rowIndex="rowIndex">
+            <tr class="border-b border-border-muted/40 hover:bg-white/5 transition-colors">
+
+              <!-- Row number -->
+              <td class="py-3 px-5 text-xs text-txt-muted font-mono">
+                {{ (store.page() - 1) * store.limit() + rowIndex + 1 }}
+              </td>
+
+              <!-- Receipt No -->
+              <td class="py-3 px-5 font-mono text-xs" style="color: var(--primary-400)">
+                {{ tx.mpesaReceiptNumber || '—' }}
+              </td>
+
+              <!-- Type -->
+              <td class="py-3 px-5">
+                <p-tag
+                  [value]="tx.type === 'STK_PUSH' ? 'STK' : 'C2B'"
+                  [severity]="typeSeverity(tx.type)"
+                  styleClass="text-[9px] uppercase font-bold px-2 py-0.5 rounded" />
+              </td>
+
+              <!-- Phone -->
+              <td class="py-3 px-5 font-mono text-xs text-txt-muted">{{ tx.phoneNumber }}</td>
+
+              <!-- Account Ref -->
+              <td class="py-3 px-5 text-xs text-txt-main">{{ tx.accountReference || '—' }}</td>
+
+              <!-- Amount -->
+              <td class="py-3 px-5 text-xs text-txt-main font-medium">
+                KES {{ tx.amount | number }}
+              </td>
+
+              <!-- Status -->
+              <td class="py-3 px-5">
+                <p-tag
+                  [value]="tx.status"
+                  [severity]="statusSeverity(tx.status)"
+                  styleClass="text-[9px] uppercase font-bold px-2 py-0.5 rounded" />
+              </td>
+
+              <!-- Date -->
+              <td class="py-3 px-5 text-xs text-txt-muted">
+                {{ tx.createdAt | date:'dd MMM y, HH:mm' }}
+              </td>
+
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="py-12 text-center text-xs text-txt-muted">
+                <i class="pi pi-inbox text-2xl block mb-2 opacity-30"></i>
+                No transactions found.
+                @if (hasActiveFilters()) {
+                  <p-button
+                    label="Clear filters"
+                    size="small"
+                    [text]="true"
+                    severity="secondary"
+                    (onClick)="clearFilters()"
+                    class="mt-2 block" />
+                }
+              </td>
+            </tr>
+          </ng-template>
+
+        </p-table>
+
+        <!-- Pagination -->
+        <div class="flex items-center justify-between px-4 py-3 border-t border-border-muted">
+          <p class="text-xs text-txt-muted">
+            Showing {{ (store.page() - 1) * store.limit() + 1 }}–{{ (store.page() - 1) * store.limit() + store.transactions().length }}
+            of {{ store.total() }}
+          </p>
+          <div class="flex gap-2">
+            <p-button
+              icon="pi pi-chevron-left"
+              size="small"
+              [outlined]="true"
+              severity="secondary"
+              [disabled]="store.page() === 1"
+              (onClick)="onPageChange(store.page() - 1)" />
+            <span class="text-xs text-txt-muted flex items-center px-2">
+              Page {{ store.page() }}
+            </span>
+            <p-button
+              icon="pi pi-chevron-right"
+              size="small"
+              [outlined]="true"
+              severity="secondary"
+              [disabled]="store.transactions().length < store.limit()"
+              (onClick)="onPageChange(store.page() + 1)" />
+          </div>
+        </div>
+      }
+
+    </div>
+
+  </ng-container>
+
+  <!-- Side Panel -->
+  <ng-container side-panel>
+    <div class="border border-border-muted bg-panel-bg rounded-xl p-5 backdrop-blur-xl">
+      <h3 class="text-sm font-semibold text-txt-main mb-4">Polling Status</h3>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-txt-muted">Next refresh</span>
+          <span class="font-mono text-xs" style="color: var(--primary-400)">
+            {{ store.pollingEnabled() ? countdown + 's' : '—' }}
+          </span>
+        </div>
+        <div class="w-full rounded-full h-1.5 bg-border-muted overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all"
+            style="background: var(--primary-500)"
+            [style.width.%]="store.pollingEnabled() ? ((15 - countdown) / 15) * 100 : 0">
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-xs"
+             [class.text-green-400]="store.pollingEnabled()"
+             [class.text-txt-muted]="!store.pollingEnabled()">
+          <span class="w-2 h-2 rounded-full"
+                [class.bg-green-400]="store.pollingEnabled()"
+                [class.animate-pulse]="store.pollingEnabled()"
+                [class.bg-border-muted]="!store.pollingEnabled()">
+          </span>
+          {{ store.pollingEnabled() ? 'Live polling active' : 'Polling paused' }}
+        </div>
+
+        <div class="mt-2 pt-3 border-t border-border-muted flex flex-col gap-2">
+          <div class="flex justify-between text-xs">
+            <span class="text-txt-muted">Current page</span>
+            <span class="text-txt-main font-medium">{{ store.page() }}</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-txt-muted">Per page</span>
+            <span class="text-txt-main font-medium">{{ store.limit() }}</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-txt-muted">Total records</span>
+            <span class="text-txt-main font-medium">{{ store.total() }}</span>
+          </div>
+          @if (hasActiveFilters()) {
+            <div class="flex justify-between text-xs">
+              <span class="text-txt-muted">Filters</span>
+              <span style="color: var(--primary-400)" class="font-medium">Active</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+</app-dashboard-shell>

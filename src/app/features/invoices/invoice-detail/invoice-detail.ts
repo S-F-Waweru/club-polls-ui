@@ -15,7 +15,7 @@ import { Button } from 'primeng/button';
 })
 export class InvoiceDetailComponent {
   private route = inject(ActivatedRoute);
-  private store = inject(InvoicesStore);
+  store = inject(InvoicesStore);
 
   private invoiceId = this.route.snapshot.paramMap.get('id');
 

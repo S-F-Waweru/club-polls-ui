@@ -1,76 +1,49 @@
 import { Routes } from '@angular/router';
-import { LogIn } from './features/auth/log-in/log-in';
 import { guestGuard } from './core/guards/guest.guard';
-import { DashboardComponent } from './features/dashboard/dasboard-component/dasboard-component';
-import { StudentListComponent } from './features/students/student-list/student-list';
-import { StudentDetailComponent } from './features/students/student-detail/student-detail';
-import { StudentFormComponent } from './features/students/student-form/student-form';
-import { CourseFormComponent } from './features/courses/course-form/course-form';
-import { CourseListComponent } from './features/courses/course-list/course-list';
-import { CourseDetailComponent } from './features/courses/course-detail/course-detail';
-import {EnrollmentListComponent} from './features/enrollments/enrollment-list-component/enrollment-list-component';
-import {EnrollmentDetailComponent} from './features/enrollments/enrollment-detail/enrollment-detail';
-import {EnrollmentFormComponent} from './features/enrollments/enrollment-form/enrollment-form';
-import {InvoiceListComponent} from './features/invoices/invoice-list/invoice-list';
-import {InvoiceDetailComponent} from './features/invoices/invoice-detail/invoice-detail';
-import {PaymentListComponent} from './features/payments/payment-list/payment-list';
-import {PaymentDetailComponent} from './features/payments/payment-detail/payment-detail';
-import {PaymentFormComponent} from './features/payments/payment-form/payment-form';
-import { FinancialOverview } from './features/overview/financial-overview/financial-overview';
-import { CoursesOverview } from './features/overview/courses-overview/courses-overview';
 
 export const routes: Routes = [
   {
     path: 'login',
-    component: LogIn,
-    canActivate: [guestGuard], //
+    loadComponent: () => import('./features/auth/log-in/log-in').then(m => m.LogIn),
+    canActivate: [guestGuard],
   },
-
   {
     path: 'dashboard',
-    component: DashboardComponent,
-    // You'd use an authGuard here to block guests from the dashboard
+    loadComponent: () => import('./features/dashboard/dasboard-component/dasboard-component').then(m => m.DashboardComponent),
   },
   {
     path: 'finances-overview',
-    component: FinancialOverview,
-    // You'd use an authGuard here to block guests from the dashboard
+    loadComponent: () => import('./features/overview/financial-overview/financial-overview').then(m => m.FinancialOverview),
   },
-
   {
     path: 'courses-overview',
-    component: CoursesOverview,
-    // You'd use an authGuard here to block guests from the dashboard
+    loadComponent: () => import('./features/overview/courses-overview/courses-overview').then(m => m.CoursesOverview),
   },
 
-  { path: 'students', component: StudentListComponent },
-  { path: 'students/new', component: StudentFormComponent },
-  { path: 'students/:id', component: StudentDetailComponent },
-  { path: 'students/:id/edit', component: StudentFormComponent },
+  { path: 'students', loadComponent: () => import('./features/students/student-list/student-list').then(m => m.StudentListComponent) },
+  { path: 'students/new', loadComponent: () => import('./features/students/student-form/student-form').then(m => m.StudentFormComponent) },
+  { path: 'students/:id', loadComponent: () => import('./features/students/student-detail/student-detail').then(m => m.StudentDetailComponent) },
+  { path: 'students/:id/edit', loadComponent: () => import('./features/students/student-form/student-form').then(m => m.StudentFormComponent) },
 
-  { path: 'courses', component: CourseListComponent },
-  { path: 'courses/new', component: CourseFormComponent },
-  { path: 'courses/:id', component: CourseDetailComponent },
-  { path: 'courses/:id/edit', component: CourseFormComponent },
+  { path: 'courses', loadComponent: () => import('./features/courses/course-list/course-list').then(m => m.CourseListComponent) },
+  { path: 'courses/new', loadComponent: () => import('./features/courses/course-form/course-form').then(m => m.CourseFormComponent) },
+  { path: 'courses/:id', loadComponent: () => import('./features/courses/course-detail/course-detail').then(m => m.CourseDetailComponent) },
+  { path: 'courses/:id/edit', loadComponent: () => import('./features/courses/course-form/course-form').then(m => m.CourseFormComponent) },
 
-  { path: 'enrollments', component: EnrollmentListComponent },
-  { path: 'enrollments/new', component: EnrollmentFormComponent },
-  { path: 'enrollments/:id', component: EnrollmentDetailComponent },
-  { path: 'enrollments/:id/edit', component: EnrollmentFormComponent },
+  { path: 'enrollments', loadComponent: () => import('./features/enrollments/enrollment-list-component/enrollment-list-component').then(m => m.EnrollmentListComponent) },
+  { path: 'enrollments/new', loadComponent: () => import('./features/enrollments/enrollment-form/enrollment-form').then(m => m.EnrollmentFormComponent) },
+  { path: 'enrollments/:id', loadComponent: () => import('./features/enrollments/enrollment-detail/enrollment-detail').then(m => m.EnrollmentDetailComponent) },
+  { path: 'enrollments/:id/edit', loadComponent: () => import('./features/enrollments/enrollment-form/enrollment-form').then(m => m.EnrollmentFormComponent) },
 
-  { path: 'payments', component: PaymentListComponent },
-  { path: 'payments/new', component: PaymentFormComponent },
-  { path: 'payments/:id', component: PaymentDetailComponent },
-  { path: 'payments/:id/edit', component: PaymentFormComponent },
+  { path: 'payments', loadComponent: () => import('./features/payments/payment-list/payment-list').then(m => m.PaymentListComponent) },
+  { path: 'payments/new', loadComponent: () => import('./features/payments/payment-form/payment-form').then(m => m.PaymentFormComponent) },
+  { path: 'payments/:id', loadComponent: () => import('./features/payments/payment-detail/payment-detail').then(m => m.PaymentDetailComponent) },
+  { path: 'payments/:id/edit', loadComponent: () => import('./features/payments/payment-form/payment-form').then(m => m.PaymentFormComponent) },
 
-  { path: 'invoices', component: InvoiceListComponent },
-  // { path: 'invoices/new', component: EnrollmentFormComponent },
-  { path: 'invoices/:id', component: InvoiceDetailComponent },
-  // { path: 'invoices/:id/edit', component: EnrollmentFormComponent },
+  { path: 'invoices', loadComponent: () => import('./features/invoices/invoice-list/invoice-list').then(m => m.InvoiceListComponent) },
+  { path: 'invoices/:id', loadComponent: () => import('./features/invoices/invoice-detail/invoice-detail').then(m => m.InvoiceDetailComponent) },
 
-  {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
-  },
+  { path: 'transactions', loadComponent: () => import('./features/Daraja/components/daraja-transactions/daraja-transactions').then(m => m.DarajaTransactionsComponent) },
+
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
 ];
